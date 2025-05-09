@@ -32,8 +32,8 @@ export default function AiSuggestionsPage() {
     const handleStorageChange = () => fetchSubscriptions();
     const handleSubscriptionsUpdated = () => fetchSubscriptions();
 
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('payright-subscriptions-updated', handleSubscriptionsUpdated);
+    window.addEventListener('storage', handleStorageChange); // For direct localStorage changes
+    window.addEventListener('payright-subscriptions-updated', handleSubscriptionsUpdated); // For custom event
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -71,7 +71,7 @@ export default function AiSuggestionsPage() {
         toast({ title: 'Alternatives Found', description: `AI suggestions for ${selectedSub.vendor} are ready.` });
       }
     } catch (e: any) {
-      const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred.";
+      const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred while suggesting alternatives.";
       setError(errorMessage);
       toast({ title: 'Error Suggesting Alternatives', description: errorMessage, variant: 'destructive' });
     } finally {
@@ -205,7 +205,7 @@ export default function AiSuggestionsPage() {
        {subscriptions.length === 0 && !isLoading && (
         <Card className="shadow-md">
             <CardContent className="p-6 text-center">
-                <p className="text-muted-foreground">No active subscriptions found. Please sync your bank data on the Dashboard to detect subscriptions first.</p>
+                <p className="text-muted-foreground">No active subscriptions found. Please sync your bank data on the Dashboard to detect subscriptions first, or ensure they are active.</p>
             </CardContent>
         </Card>
       )}

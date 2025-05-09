@@ -7,16 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import type { Subscription, Transaction, SubscriptionStatus } from '@/types';
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
-// AlternativeSuggestionModal is removed as its functionality moves to a sidebar widget
-// import AlternativeSuggestionModal from '@/components/dashboard/alternative-suggestion-modal';
 import AlertsSection from '@/components/dashboard/alerts-section';
 import TransactionHistoryList from '@/components/dashboard/transaction-history-list';
-// Import AI-related actions
 import { 
   handleDetectCharges, 
-  // handleSuggestAlternatives is no longer called from here
 } from '@/app/actions';
-// Import client-side services directly
 import { 
   getTransactions as getTransactionsService,
   chargeForSubscription as chargeForSubscriptionService 
@@ -34,12 +29,6 @@ export default function DashboardPage() {
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // State related to AlternativeSuggestionModal is removed
-  // const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
-  // const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  // const [isSuggestingAlternatives, setIsSuggestingAlternatives] = useState(false);
-
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const fetchTransactionData = async () => {
@@ -84,6 +73,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!isLoading) { 
         localStorage.setItem('payright-subscriptions', JSON.stringify(subscriptions));
+        // Dispatch custom event whenever subscriptions are updated
+        window.dispatchEvent(new CustomEvent('payright-subscriptions-updated'));
     }
   }, [subscriptions, isLoading]);
 
@@ -91,40 +82,34 @@ export default function DashboardPage() {
   const onChargesDetected = async (bankData: string) => {
     setIsLoading(true);
     setSubscriptions([]); 
-    const result = await handleDetectCharges({ bankData }); // AI action call
-    setIsLoading(false);
+    try {
+      const result = await handleDetectCharges({ bankData }); 
 
-    if ('error' in result) {
-      toast({ title: 'Error Detecting Charges', description: result.error, variant: 'destructive' });
-      return;
+      if ('error' in result) {
+        toast({ title: 'Error Detecting Charges', description: result.error, variant: 'destructive' });
+        return;
+      }
+      
+      if (Array.isArray(result) && result.length > 0) {
+        const newSubs = result.map((charge, index) => ({
+          ...charge, 
+          id: `sub-${Date.now()}-${index}`, 
+          isUnused: charge.usage_count === 0, 
+          status: 'active' as SubscriptionStatus, 
+        }));
+        setSubscriptions(newSubs); 
+        toast({ title: 'Charges Detected', description: `${newSubs.length} potential subscriptions found.` });
+      } else {
+        setSubscriptions([]);
+        toast({ title: 'No Charges Detected', description: 'Could not find recurring charges from the provided data.' });
+      }
+    } catch (clientError: any) {
+      console.error("Client-side error calling handleDetectCharges:", clientError);
+      const errorMessage = clientError instanceof Error ? clientError.message : "An unexpected error occurred while detecting charges.";
+      toast({ title: 'Error Communicating with Server', description: errorMessage, variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
     }
-    
-    if (Array.isArray(result) && result.length > 0) {
-      const newSubs = result.map((charge, index) => ({
-        ...charge, 
-        id: `sub-${Date.now()}-${index}`, 
-        isUnused: charge.usage_count === 0, 
-        status: 'active' as SubscriptionStatus, 
-      }));
-      setSubscriptions(newSubs); 
-      toast({ title: 'Charges Detected', description: `${newSubs.length} potential subscriptions found.` });
-    } else {
-      setSubscriptions([]);
-      toast({ title: 'No Charges Detected', description: 'Could not find recurring charges from the provided data.' });
-    }
-  };
-
-  // onSuggestAlternatives function and handleOpenSuggestModal are removed
-  // The logic for suggesting alternatives will now reside in the SidebarAiSuggestionWidget
-
-  const handleToggleUnused = (subId: string) => { 
-    setSubscriptions(subs => 
-      subs.map(s => 
-        s.id === subId 
-          ? { ...s, isUnused: !s.isUnused, unusedSince: !s.isUnused ? new Date().toISOString() : undefined } 
-          : s
-      )
-    );
   };
   
   const handleDeleteSubscription = (subId: string) => {
@@ -163,18 +148,18 @@ export default function DashboardPage() {
   const onChargeSubscription = async (sub: Subscription) => {
     setIsProcessingAction(true);
     try {
-      const result = await chargeForSubscriptionService(MOCK_USER_ID, sub); // Direct service call
+      const result = await chargeForSubscriptionService(MOCK_USER_ID, sub); 
       if (result.success) {
-        await fetchTransactionData(); // Refresh local transactions
+        await fetchTransactionData(); 
         toast({ title: 'Charge Successful', description: `${sub.vendor} charged. New balance: $${result.newBalance.toFixed(2)}` });
       } else {
-        await fetchTransactionData(); // Refresh transactions to show failed attempt
+        await fetchTransactionData(); 
         toast({ title: 'Charge Failed', description: `Could not charge ${sub.vendor}. Insufficient funds.`, variant: 'destructive' });
       }
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred during charging.";
       toast({ title: 'Charging Error', description: errorMessage, variant: 'destructive' });
-      await fetchTransactionData(); // Refresh transactions even on error
+      await fetchTransactionData(); 
     } finally {
       setIsProcessingAction(false);
     }
@@ -183,12 +168,12 @@ export default function DashboardPage() {
   const onToggleSubscriptionStatus = async (subId: string, newStatus: SubscriptionStatus) => {
     setIsProcessingAction(true);
     try {
-      const updatedSubscription = await toggleSubscriptionStatusService(MOCK_USER_ID, subId, newStatus); // Direct service call
+      const updatedSubscription = await toggleSubscriptionStatusService(MOCK_USER_ID, subId, newStatus); 
       if (!updatedSubscription) {
         toast({ title: 'Status Update Error', description: "Subscription not found or failed to update.", variant: 'destructive' });
       } else {
         setSubscriptions(subs => subs.map(s => s.id === subId ? updatedSubscription : s));
-        await fetchTransactionData(); // Refresh transactions to show status change log
+        await fetchTransactionData(); 
         toast({ title: 'Status Updated', description: `${updatedSubscription.vendor} status set to ${newStatus}.` });
       }
     } catch (e: any) {
@@ -264,8 +249,6 @@ export default function DashboardPage() {
         ) : (
             <SubscriptionsList
             subscriptions={subscriptions}
-            // onSuggestAlternatives prop is removed
-            onToggleUnused={handleToggleUnused} 
             onDeleteSubscription={handleDeleteSubscription}
             onChargeSubscription={onChargeSubscription}
             onToggleSubscriptionStatus={onToggleSubscriptionStatus}
@@ -274,17 +257,6 @@ export default function DashboardPage() {
             />
         )
       )}
-
-      {/* AlternativeSuggestionModal is removed */}
-      {/* {selectedSubscription && isSuggestModalOpen && (
-        <AlternativeSuggestionModal
-          isOpen={isSuggestModalOpen}
-          onClose={() => { setIsSuggestModalOpen(false); setSelectedSubscription(null); }}
-          subscription={selectedSubscription}
-          onSuggest={onSuggestAlternatives} 
-          isLoading={isSuggestingAlternatives}
-        />
-      )} */}
     </div>
   );
 }

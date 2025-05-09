@@ -62,17 +62,30 @@ const detectRecurringChargesFlow = ai.defineFlow(
   },
   async input => {
     try {
-      const {output} = await prompt(input);
-      if (!output) {
-        console.error('[detectRecurringChargesFlow] AI model returned null or undefined output.');
+      const result = await prompt(input);
+
+      if (result.error) {
+        console.error(`[detectRecurringChargesFlow] AI prompt execution error: ${result.error}`);
+        throw new Error(`AI prompt execution failed: ${result.error}`);
+      }
+
+      if (!result.output) {
+        console.error('[detectRecurringChargesFlow] AI model returned null or undefined output, and no explicit error from prompt.');
         throw new Error('AI model failed to generate valid recurring charges output or the output was null.');
       }
-      return output;
+      return result.output;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`[detectRecurringChargesFlow] Error during AI processing: ${errorMessage}`);
-      // Re-throw the error to be caught by the calling server action
-      throw new Error(`AI processing failed in detectRecurringChargesFlow: ${errorMessage}`);
+      // Avoid double-prefixing error messages
+      let finalErrorMessage = `AI processing failed in detectRecurringChargesFlow: ${errorMessage}`;
+      if (errorMessage.startsWith('AI prompt execution failed:') || 
+          errorMessage.startsWith('AI model failed to generate') ||
+          errorMessage.startsWith('AI processing failed in detectRecurringChargesFlow:')) {
+        finalErrorMessage = errorMessage;
+      }
+      
+      console.error(`[detectRecurringChargesFlow] Error: ${finalErrorMessage}`);
+      throw new Error(finalErrorMessage);
     }
   }
 );
