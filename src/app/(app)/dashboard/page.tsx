@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -5,29 +6,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import type { Subscription } from '@/types';
-// ChargeDetectionModal is removed
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
-// PredictRenewalModal is removed
 import AlternativeSuggestionModal from '@/components/dashboard/alternative-suggestion-modal';
 import AlertsSection from '@/components/dashboard/alerts-section';
 import { handleDetectCharges, handleSuggestAlternatives } from '@/app/actions';
-// PredictRenewalDatesOutput is removed
 import type { DetectRecurringChargesOutput, SuggestSubscriptionAlternativesOutput } from '@/types';
-import { PlusCircle, BarChart3 } from 'lucide-react'; // FileScan removed
+import { PlusCircle, BarChart3, FileScan } from 'lucide-react';
 import Image from 'next/image';
 
 export default function DashboardPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Start loading true for initial data fetch
+  const [isLoading, setIsLoading] = useState(true); 
   const { toast } = useToast();
 
-  // isChargeModalOpen is removed
-  // isPredictModalOpen is removed
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
 
   const generateMockBankData = () => {
-    // More detailed mock data for better AI parsing
     return `
       Transaction: Netflix Premium - $19.99 on 2024-06-15 for monthly streaming
       Transaction: Spotify Family Plan - $16.99 on 2024-06-10 for music service
@@ -43,10 +38,9 @@ export default function DashboardPage() {
 
   const onChargesDetected = async (bankData: string) => {
     setIsLoading(true);
-    setSubscriptions([]); // Clear existing subscriptions when new data is analyzed
+    setSubscriptions([]); 
     const result = await handleDetectCharges({ bankData });
     setIsLoading(false);
-    // setIsChargeModalOpen(false) removed;
 
     if ('error' in result) {
       toast({ title: 'Error Detecting Charges', description: result.error, variant: 'destructive' });
@@ -55,53 +49,47 @@ export default function DashboardPage() {
     
     if (Array.isArray(result) && result.length > 0) {
       const newSubs = result.map((charge, index) => ({
-        ...charge, // Includes vendor, amount, frequency, last_payment_date, next_due_date, usage_count
-        id: `sub-${Date.now()}-${index}`, // Simple unique ID
-        isUnused: charge.usage_count === 0, // Initial unused status from AI
+        ...charge, 
+        id: `sub-${Date.now()}-${index}`, 
+        isUnused: charge.usage_count === 0, 
       }));
-      setSubscriptions(newSubs); // Replace, not spread into previous
+      setSubscriptions(newSubs); 
       toast({ title: 'Charges Detected', description: `${newSubs.length} potential subscriptions found.` });
     } else {
       toast({ title: 'No Charges Detected', description: 'Could not find recurring charges from the provided data.' });
     }
   };
   
-  // Load and analyze mock data on component mount
   useEffect(() => {
     const initialBankData = generateMockBankData();
     onChargesDetected(initialBankData);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run once on mount
+  }, []); 
 
-  // Effect to save subscriptions to localStorage whenever they change
   useEffect(() => {
-    if (!isLoading) { // Only save after initial load/analysis
+    if (!isLoading) { 
         localStorage.setItem('payright-subscriptions', JSON.stringify(subscriptions));
     }
   }, [subscriptions, isLoading]);
 
-  // Effect to load subscriptions from localStorage on mount (if not doing initial AI analysis)
-  // This will be overridden by the AI analysis on first load, but useful for persistence after that
   useEffect(() => {
     const storedSubscriptions = localStorage.getItem('payright-subscriptions');
-    if (storedSubscriptions && subscriptions.length === 0 && !isLoading) { // only load if subs are empty and not currently loading
+    if (storedSubscriptions && subscriptions.length === 0 && isLoading) { 
       try {
         const parsedSubs = JSON.parse(storedSubscriptions);
-        // Check if parsedSubs structure matches the current Subscription type
         if (parsedSubs.length > 0 && 'vendor' in parsedSubs[0]) {
             setSubscriptions(parsedSubs);
         } else {
-            localStorage.removeItem('payright-subscriptions'); // Clear potentially outdated data
+            localStorage.removeItem('payright-subscriptions'); 
         }
       } catch (error) {
         console.error("Failed to parse subscriptions from localStorage", error);
         localStorage.removeItem('payright-subscriptions');
       }
     }
-  }, [isLoading]); // dependencies ensure this runs after initial loading may complete
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading]); 
 
-
-  // onPredictRenewal and related logic are removed
 
   const onSuggestAlternatives = async (subId: string, userNeeds: string) => {
     const sub = subscriptions.find(s => s.id === subId);
@@ -109,7 +97,7 @@ export default function DashboardPage() {
     
     setIsLoading(true);
     const result = await handleSuggestAlternatives({ 
-      subscriptionName: sub.vendor, // Use vendor as subscriptionName for the AI
+      subscriptionName: sub.vendor, 
       userNeeds, 
       currentCost: sub.amount 
     });
@@ -135,8 +123,6 @@ export default function DashboardPage() {
     );
   };
   
-  // handleOpenPredictModal is removed
-
   const handleOpenSuggestModal = (sub: Subscription) => {
     setSelectedSubscription(sub);
     setIsSuggestModalOpen(true);
@@ -147,17 +133,24 @@ export default function DashboardPage() {
     toast({ title: 'Subscription Removed', description: 'The subscription has been removed from your list.' });
   };
 
+  const handleSyncBankData = () => {
+    toast({ title: 'Syncing Bank Data', description: 'Analyzing mock bank data for subscriptions...' });
+    onChargesDetected(generateMockBankData());
+  };
+
 
   return (
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold">Subscription Dashboard</CardTitle>
-          {/* Analyze Bank Data Button is removed */}
+           <Button onClick={handleSyncBankData} variant="outline" disabled={isLoading}>
+            <FileScan className="mr-2 h-4 w-4" /> Sync Bank Data
+          </Button>
         </CardHeader>
         <CardContent>
           <CardDescription>
-            Automatically detected recurring charges, estimated renewals, and potential cost-saving alternatives.
+            Automatically detected recurring charges from mock data, estimated renewals, and potential cost-saving alternatives.
           </CardDescription>
         </CardContent>
       </Card>
@@ -176,9 +169,8 @@ export default function DashboardPage() {
             <p className="text-muted-foreground mb-4">
               Our AI didn't find any recurring subscriptions in the mock data.
               <br />
-              This is a demo, so real data would yield results.
+              Click "Sync Bank Data" to re-analyze or check back later.
             </p>
-            {/* Button to manually add subscriptions could go here if desired in future */}
              <Image 
               src="https://picsum.photos/seed/dashboard_empty_alt/400/250" 
               alt="Empty dashboard illustration" 
@@ -192,7 +184,6 @@ export default function DashboardPage() {
       ) : (
         <SubscriptionsList
           subscriptions={subscriptions}
-          // onPredictRenewal is removed
           onSuggestAlternatives={handleOpenSuggestModal}
           onToggleUnused={handleToggleUnused}
           onDeleteSubscription={handleDeleteSubscription}
@@ -200,9 +191,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* ChargeDetectionModal is removed */}
-
-      {/* PredictRenewalModal is removed */}
       {selectedSubscription && isSuggestModalOpen && (
         <AlternativeSuggestionModal
           isOpen={isSuggestModalOpen}
