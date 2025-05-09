@@ -80,27 +80,37 @@ export default function DashboardPage() {
   }, [subscriptions, isLoading]);
 
 
-  const onSuggestAlternatives = async (subId: string) => { // userNeeds parameter removed
-    const sub = subscriptions.find(s => s.id === subId);
-    if (!sub) return;
+  const onSuggestAlternatives = async (subId: string) => {
+    const subToUpdate = subscriptions.find(s => s.id === subId);
+    if (!subToUpdate) {
+        toast({ title: 'Error', description: 'Subscription not found.', variant: 'destructive' });
+        return;
+    }
     
     setIsSuggestingAlternatives(true);
     try {
       const result = await handleSuggestAlternatives({ 
-        subscriptionName: sub.vendor, 
-        // userNeeds removed
-        currentCost: sub.amount 
+        subscriptionName: subToUpdate.vendor, 
+        currentCost: subToUpdate.amount 
       });
 
       if ('error' in result) {
         toast({ title: 'Error Suggesting Alternatives', description: result.error, variant: 'destructive' });
+        setIsSuggestingAlternatives(false);
         return;
       }
       
-      // userNeeds removed from being set here, though it might exist on the Subscription type
-      setSubscriptions(subs => subs.map(s => s.id === subId ? { ...s, alternatives: result.alternatives, alternativesReasoning: result.reasoning } : s));
-      toast({ title: 'Alternatives Found', description: `Alternatives for ${sub.vendor} suggested.` });
-      setIsSuggestModalOpen(false); 
+      const updatedSubscriptionWithAlternatives = { 
+        ...subToUpdate, 
+        alternatives: result.alternatives, 
+        alternativesReasoning: result.reasoning 
+      };
+      
+      setSubscriptions(subs => subs.map(s => s.id === subId ? updatedSubscriptionWithAlternatives : s));
+      setSelectedSubscription(updatedSubscriptionWithAlternatives); // Update selectedSubscription to re-render modal with new data
+
+      toast({ title: 'Alternatives Found', description: `Alternatives for ${subToUpdate.vendor} suggested.` });
+      // Modal remains open to show suggestions
     } catch (e) {
       console.error("Exception in onSuggestAlternatives:", e);
       toast({ title: 'Error Suggesting Alternatives', description: "An unexpected error occurred while fetching suggestions.", variant: 'destructive' });
@@ -230,7 +240,7 @@ export default function DashboardPage() {
           isOpen={isSuggestModalOpen}
           onClose={() => { setIsSuggestModalOpen(false); setSelectedSubscription(null); }}
           subscription={selectedSubscription}
-          onSuggest={onSuggestAlternatives} // Signature updated
+          onSuggest={onSuggestAlternatives} 
           isLoading={isSuggestingAlternatives}
         />
       )}

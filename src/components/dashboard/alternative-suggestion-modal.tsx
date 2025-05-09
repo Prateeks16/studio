@@ -12,17 +12,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-// Label and Textarea are removed as userNeeds input is removed
-// import { Label } from '@/components/ui/label';
-// import { Textarea } from '@/components/ui/textarea';
-import { Loader2 } from 'lucide-react'; // AlertTriangle removed as userNeeds validation is gone
-// import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Alert components removed
+import { Loader2 } from 'lucide-react'; 
+
 
 type AlternativeSuggestionModalProps = {
   isOpen: boolean;
   onClose: () => void;
   subscription: Subscription;
-  onSuggest: (subscriptionId: string) => Promise<void>; // userNeeds removed from signature
+  onSuggest: (subscriptionId: string) => Promise<void>; 
   isLoading: boolean;
 };
 
@@ -33,21 +30,13 @@ export default function AlternativeSuggestionModal({
   onSuggest,
   isLoading,
 }: AlternativeSuggestionModalProps) {
-  // userNeeds state and related error state are removed
-  // const [userNeeds, setUserNeeds] = useState(subscription.userNeeds || '');
-  // const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      // setUserNeeds(subscription.userNeeds || ''); // No longer needed
-      // setError(null); // No longer needed
-    }
+    // No specific actions needed on open related to internal state for now
   }, [isOpen, subscription]);
 
   const handleSubmit = async () => {
-    // Validation for userNeeds is removed
-    // setError(null); // No longer needed if error state is removed
-    await onSuggest(subscription.id); // userNeeds removed from call
+    await onSuggest(subscription.id); 
   };
 
   return (
@@ -61,11 +50,9 @@ export default function AlternativeSuggestionModal({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          {/* Error display related to userNeeds removed */}
-          {/* Textarea and Label for userNeeds removed */}
            {subscription.alternatives && subscription.alternatives.length > 0 && (
             <div className="mt-4">
-              <h4 className="font-semibold mb-2 text-sm">Previously Suggested Alternatives:</h4>
+              <h4 className="font-semibold mb-2 text-sm">Suggested Alternatives:</h4>
               <ul className="list-disc list-inside text-sm text-muted-foreground bg-secondary/50 p-3 rounded-md">
                 {subscription.alternatives.map((alt, index) => (
                   <li key={index}>{alt}</li>
