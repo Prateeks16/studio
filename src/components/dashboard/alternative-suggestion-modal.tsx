@@ -51,6 +51,7 @@ export default function AlternativeSuggestionModal({
       return;
     }
     setError(null);
+    // The onSuggest function in dashboard/page.tsx already handles passing subscription.vendor as subscriptionName
     await onSuggest(subscription.id, userNeeds);
   };
 
@@ -58,7 +59,7 @@ export default function AlternativeSuggestionModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Find Alternatives for {subscription.subscriptionName}</DialogTitle>
+          <DialogTitle>Find Alternatives for {subscription.vendor}</DialogTitle>
           <DialogDescription>
             Current cost: ${subscription.amount.toFixed(2)} / {subscription.frequency}. 
             Describe what you primarily use this subscription for to get better alternative suggestions.

@@ -5,18 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Lightbulb, CalendarClock, Archive, ArchiveRestore, Trash2, MoreVertical, Loader2 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { Lightbulb, Archive, ArchiveRestore, Trash2, MoreVertical, Loader2, AlertCircle } from 'lucide-react'; // CalendarClock removed
+import { format, parseISO, isValid } from 'date-fns';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 type SubscriptionsListProps = {
   subscriptions: Subscription[];
-  onPredictRenewal: (subscription: Subscription) => void;
+  // onPredictRenewal is removed
   onSuggestAlternatives: (subscription: Subscription) => void;
   onToggleUnused: (subscriptionId: string) => void;
   onDeleteSubscription: (subscriptionId: string) => void;
@@ -25,7 +27,6 @@ type SubscriptionsListProps = {
 
 export default function SubscriptionsList({
   subscriptions,
-  onPredictRenewal,
   onSuggestAlternatives,
   onToggleUnused,
   onDeleteSubscription,
@@ -36,17 +37,24 @@ export default function SubscriptionsList({
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
-  const formatDate = (dateString?: string) => {
+  const formatDateSafe = (dateString?: string) => {
     if (!dateString) return 'N/A';
     try {
-      return format(parseISO(dateString), 'MMM d, yyyy');
-    } catch (error) {
-      // Handle cases where dateString might not be a full ISO string, e.g. YYYY-MM-DD
-      try {
-        return format(new Date(dateString), 'MMM d, yyyy');
-      } catch (innerError) {
-        return dateString; // Fallback to original string if parsing fails
+      const parsedDate = parseISO(dateString);
+      if (isValid(parsedDate)) {
+        return format(parsedDate, 'MMM d, yyyy');
       }
+      // Try parsing YYYY-MM-DD if ISO parse fails
+      const parts = dateString.split('-');
+      if (parts.length === 3) {
+        const directDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        if (isValid(directDate)) {
+          return format(directDate, 'MMM d, yyyy');
+        }
+      }
+      return dateString; // Fallback
+    } catch (error) {
+      return dateString; // Fallback
     }
   };
 
@@ -56,7 +64,7 @@ export default function SubscriptionsList({
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Loading Subscriptions...</CardTitle>
-          <CardDescription>Please wait while we fetch your subscription data.</CardDescription>
+          <CardDescription>Please wait while we analyze your subscription data.</CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center items-center py-12">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -75,72 +83,79 @@ export default function SubscriptionsList({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead className="text-right">Cost</TableHead>
-              <TableHead>Frequency</TableHead>
-              <TableHead>Renewal Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {subscriptions.map((sub) => (
-              <TableRow key={sub.id}>
-                <TableCell className="font-medium">{sub.subscriptionName}</TableCell>
-                <TableCell className="text-right">{formatCurrency(sub.amount)}</TableCell>
-                <TableCell>{sub.frequency}</TableCell>
-                <TableCell>
-                  {sub.predictedRenewalDate ? (
-                     <Badge variant={sub.renewalConfidence && sub.renewalConfidence < 0.7 ? "outline" : "secondary"}>
-                       {formatDate(sub.predictedRenewalDate)}
-                       {sub.renewalConfidence && ` (${(sub.renewalConfidence * 100).toFixed(0)}%)`}
-                     </Badge>
-                  ) : (
-                    <Button variant="link" size="sm" onClick={() => onPredictRenewal(sub)} className="p-0 h-auto text-primary">
-                      Predict
-                    </Button>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {sub.isUnused ? (
-                    <Badge variant="destructive">Unused</Badge>
-                  ) : (
-                    <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">Active</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onSuggestAlternatives(sub)}>
-                        <Lightbulb className="mr-2 h-4 w-4" /> Find Alternatives
-                      </DropdownMenuItem>
-                      {!sub.predictedRenewalDate && (
-                        <DropdownMenuItem onClick={() => onPredictRenewal(sub)}>
-                          <CalendarClock className="mr-2 h-4 w-4" /> Predict Renewal
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => onToggleUnused(sub.id)}>
-                        {sub.isUnused ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
-                        {sub.isUnused ? 'Mark as Active' : 'Mark as Unused'}
-                      </DropdownMenuItem>
-                       <DropdownMenuItem onClick={() => onDeleteSubscription(sub.id)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+        <TooltipProvider>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Vendor</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
+                <TableHead>Frequency</TableHead>
+                <TableHead>Last Payment</TableHead>
+                <TableHead>Next Due Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {subscriptions.map((sub) => (
+                <TableRow key={sub.id}>
+                  <TableCell className="font-medium">{sub.vendor}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(sub.amount)}</TableCell>
+                  <TableCell>{sub.frequency}</TableCell>
+                  <TableCell>{formatDateSafe(sub.last_payment_date)}</TableCell>
+                  <TableCell>
+                    {sub.next_due_date ? (
+                       <Badge variant="secondary">
+                         {formatDateSafe(sub.next_due_date)}
+                       </Badge>
+                    ) : (
+                      'N/A' 
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {sub.isUnused ? ( // User toggled or AI detected usage_count === 0
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Badge variant="destructive" className="cursor-help">
+                            <AlertCircle className="h-3 w-3 mr-1" /> Unused
+                           </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{sub.usage_count === 0 ? "AI detected as unused (usage: 0)." : "Marked as unused by user."}</p>
+                          {sub.unusedSince && <p>Marked on: {formatDateSafe(sub.unusedSince)}</p>}
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                       <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-white">Active</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onSuggestAlternatives(sub)}>
+                          <Lightbulb className="mr-2 h-4 w-4" /> Find Alternatives
+                        </DropdownMenuItem>
+                        {/* Predict Renewal option removed */}
+                        <DropdownMenuItem onClick={() => onToggleUnused(sub.id)}>
+                          {sub.isUnused ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                          {sub.isUnused ? 'Mark as Active' : 'Mark as Unused'}
+                        </DropdownMenuItem>
+                         <DropdownMenuItem onClick={() => onDeleteSubscription(sub.id)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TooltipProvider>
       </CardContent>
     </Card>
   );
