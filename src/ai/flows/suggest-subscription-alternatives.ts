@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -57,11 +56,18 @@ const suggestSubscriptionAlternativesFlow = ai.defineFlow(
     outputSchema: SuggestSubscriptionAlternativesOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
-    if (!output) {
-      throw new Error('AI model failed to generate valid subscription alternatives or the output was null.');
+    try {
+      const {output} = await prompt(input);
+      if (!output) {
+        console.error('[suggestSubscriptionAlternativesFlow] AI model returned null or undefined output.');
+        throw new Error('AI model failed to generate valid subscription alternatives or the output was null.');
+      }
+      return output;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[suggestSubscriptionAlternativesFlow] Error during AI processing: ${errorMessage}`);
+      // Re-throw the error to be caught by the calling server action
+      throw new Error(`AI processing failed in suggestSubscriptionAlternativesFlow: ${errorMessage}`);
     }
-    return output;
   }
 );
-
