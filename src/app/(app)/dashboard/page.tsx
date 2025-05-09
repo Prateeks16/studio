@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Subscription, SubscriptionStatus, Transaction } from '@/types';
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
 import AlertsSection from '@/components/dashboard/alerts-section';
+import MonthlyExpenditureAnalytics from '@/components/dashboard/monthly-expenditure-analytics'; // New Import
 import { 
   handleDetectCharges, 
 } from '@/app/actions';
@@ -15,11 +16,10 @@ import {
   chargeForSubscription as chargeForSubscriptionService 
 } from '@/services/walletService';
 import { toggleSubscriptionStatus as toggleSubscriptionStatusService } from '@/services/subscriptionService';
-import { format, addMonths, addYears, parseISO, isValid } from 'date-fns'; // Added isValid
+import { format, addMonths, addYears, parseISO, isValid } from 'date-fns'; 
 
 import { BarChart3, FileScan, Loader2 } from 'lucide-react';
-// Image component removed as it's no longer used for the empty state
-import { saveTransactionToStorage } from '@/lib/localStorageUtils'; // Import for manual transaction logging
+import { saveTransactionToStorage } from '@/lib/localStorageUtils'; 
 
 const MOCK_USER_ID = 'defaultUser';
 
@@ -130,19 +130,16 @@ export default function DashboardPage() {
     let newNextDueDate = newLastPaymentDate;
           
     try {
-      const baseDateForNext = parseISO(newLastPaymentDate); // Use newLastPaymentDate for parsing
+      const baseDateForNext = parseISO(newLastPaymentDate); 
       if (subToRenew.frequency.toLowerCase() === 'monthly') {
         newNextDueDate = format(addMonths(baseDateForNext, 1), 'yyyy-MM-dd');
       } else if (subToRenew.frequency.toLowerCase() === 'yearly') {
         newNextDueDate = format(addYears(baseDateForNext, 1), 'yyyy-MM-dd');
       } else {
-        // Default or attempt to parse frequency if it's like "X days"
-        // For now, simple monthly/yearly, or keep same as last payment as fallback.
-        newNextDueDate = format(addMonths(baseDateForNext, 1), 'yyyy-MM-dd'); // Default to monthly if unknown
+        newNextDueDate = format(addMonths(baseDateForNext, 1), 'yyyy-MM-dd'); 
       }
     } catch (e) {
       console.error("Error calculating next due date during renewal:", e);
-      // newNextDueDate remains newLastPaymentDate as fallback
     }
     
     const newStatus: SubscriptionStatus = 'active';
@@ -241,7 +238,7 @@ export default function DashboardPage() {
         toast({ title: 'Status Update Error', description: "Subscription not found or failed to update.", variant: 'destructive' });
       } else {
         setSubscriptions(subs => subs.map(s => s.id === subId ? updatedSubscription : s));
-        window.dispatchEvent(new CustomEvent('payright-transactions-updated')); // Already present, good.
+        window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
         toast({ title: 'Status Updated', description: `${updatedSubscription.vendor} status set to ${newStatus}.` });
       }
     } catch (e: any) {
@@ -280,6 +277,12 @@ export default function DashboardPage() {
       
       <AlertsSection subscriptions={subscriptions} />
 
+      {/* Analytics Section */}
+      {subscriptions.length > 0 && !isLoading && (
+        <MonthlyExpenditureAnalytics subscriptions={subscriptions} />
+      )}
+
+
       {subscriptions.length === 0 && !isLoading ? (
         <Card className="text-center py-12 shadow-md">
           <CardHeader>
@@ -292,7 +295,6 @@ export default function DashboardPage() {
             <p className="text-muted-foreground mb-4">
               Click "Sync Bank Data (CSV)" to upload and analyze transactions.
             </p>
-            {/* Image removed from here */}
           </CardContent>
         </Card>
       ) : (
