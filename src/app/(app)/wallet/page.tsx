@@ -8,10 +8,41 @@ import TransactionHistoryList from '@/components/dashboard/transaction-history-l
 import type { Wallet, Transaction } from '@/types';
 import { getWallet as getWalletService, getTransactions as getTransactionsService } from '@/services/walletService';
 import { useToast } from '@/hooks/use-toast';
-import { IndianRupee, Wallet as WalletIcon, Loader2, PlusCircle } from 'lucide-react'; // Replaced DollarSign with IndianRupee
+import { IndianRupee, Wallet as WalletIcon, Loader2, PlusCircle, Download } from 'lucide-react'; // Added Download icon
 
 const MOCK_USER_ID = 'defaultUser';
 const OPEN_ADD_FUNDS_MODAL_EVENT = 'payright-request-open-add-funds-modal';
+
+// Helper function to escape CSV cell content
+const escapeCsvCell = (cellData: string): string => {
+  if (cellData === null || cellData === undefined) {
+    return '';
+  }
+  const strCellData = String(cellData);
+  // If the cellData contains a comma, newline, or double quote, enclose it in double quotes.
+  // Also, any double quote within the cellData must be escaped by another double quote.
+  if (strCellData.includes(',') || strCellData.includes('"') || strCellData.includes('\n')) {
+    return `"${strCellData.replace(/"/g, '""')}"`;
+  }
+  return strCellData;
+};
+
+// Helper function to convert transactions to CSV string
+const convertTransactionsToCSV = (data: Transaction[]): string => {
+  const header = ['ID', 'Timestamp (UTC)', 'Type', 'Description', 'Amount', 'Currency', 'Subscription ID', 'Details'];
+  const rows = data.map(txn => [
+    txn.id,
+    txn.timestamp, // Using raw ISO string for better machine readability
+    txn.type,
+    escapeCsvCell(txn.description),
+    txn.amount !== undefined ? txn.amount.toString() : '',
+    'INR', // Assuming currency is always INR for this app
+    txn.subscriptionId || '',
+    escapeCsvCell(txn.relatedDetail || '')
+  ].join(','));
+  return [header.join(','), ...rows].join('\n');
+};
+
 
 export default function WalletPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -74,17 +105,52 @@ export default function WalletPage() {
     window.dispatchEvent(new CustomEvent(OPEN_ADD_FUNDS_MODAL_EVENT));
   };
 
+  const handleDownloadHistory = () => {
+    if (transactions.length === 0) {
+      toast({ title: 'No Transactions', description: 'There are no transactions to download.', variant: 'default' });
+      return;
+    }
+    try {
+      const csvData = convertTransactionsToCSV(transactions);
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'payright_transaction_history.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast({ title: 'Download Started', description: 'Your transaction history is downloading.' });
+    } catch (error) {
+      console.error("Error generating or downloading CSV:", error);
+      toast({ title: 'Download Failed', description: 'Could not download transaction history.', variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card className="shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-2">
           <div className="flex items-center">
             <WalletIcon className="h-6 w-6 text-primary mr-3" />
             <CardTitle className="text-xl font-semibold">My Wallet</CardTitle>
           </div>
-          <Button variant="outline" onClick={handleOpenAddFundsModal}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Funds
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={handleOpenAddFundsModal} className="w-full sm:w-auto">
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Funds
+            </Button>
+            <Button 
+                variant="outline" 
+                onClick={handleDownloadHistory} 
+                disabled={transactions.length === 0 || isLoadingTransactions}
+                className="w-full sm:w-auto"
+            >
+              <Download className="mr-2 h-4 w-4" /> Download History
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <CardDescription>View your current balance and manage funds.</CardDescription>
@@ -121,3 +187,4 @@ export default function WalletPage() {
     </div>
   );
 }
+
