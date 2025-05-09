@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -17,7 +18,7 @@ import { toggleSubscriptionStatus as toggleSubscriptionStatusService } from '@/s
 import { format, addMonths, addYears, parseISO, isValid } from 'date-fns'; // Added isValid
 
 import { BarChart3, FileScan, Loader2 } from 'lucide-react';
-import Image from 'next/image';
+// Image component removed as it's no longer used for the empty state
 import { saveTransactionToStorage } from '@/lib/localStorageUtils'; // Import for manual transaction logging
 
 const MOCK_USER_ID = 'defaultUser';
@@ -291,14 +292,7 @@ export default function DashboardPage() {
             <p className="text-muted-foreground mb-4">
               Click "Sync Bank Data (CSV)" to upload and analyze transactions.
             </p>
-             <Image 
-              src="https://picsum.photos/seed/dashboard_empty_alt/400/250" 
-              alt="Empty dashboard illustration" 
-              width={400} 
-              height={250} 
-              className="mx-auto mt-8 rounded-lg shadow-md"
-              data-ai-hint="empty state illustration" 
-            />
+            {/* Image removed from here */}
           </CardContent>
         </Card>
       ) : (
@@ -326,3 +320,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
