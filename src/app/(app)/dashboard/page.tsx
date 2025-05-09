@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -20,11 +21,11 @@ export default function DashboardPage() {
 
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  const [isSuggestingAlternatives, setIsSuggestingAlternatives] = useState(false); // New state for suggestion loading
+  const [isSuggestingAlternatives, setIsSuggestingAlternatives] = useState(false);
 
   const onChargesDetected = async (bankData: string) => {
     setIsLoading(true);
-    setSubscriptions([]); // Clear existing subscriptions
+    setSubscriptions([]); 
     const result = await handleDetectCharges({ bankData });
     setIsLoading(false);
 
@@ -79,7 +80,7 @@ export default function DashboardPage() {
   }, [subscriptions, isLoading]);
 
 
-  const onSuggestAlternatives = async (subId: string, userNeeds: string) => {
+  const onSuggestAlternatives = async (subId: string) => { // userNeeds parameter removed
     const sub = subscriptions.find(s => s.id === subId);
     if (!sub) return;
     
@@ -87,18 +88,17 @@ export default function DashboardPage() {
     try {
       const result = await handleSuggestAlternatives({ 
         subscriptionName: sub.vendor, 
-        userNeeds, 
+        // userNeeds removed
         currentCost: sub.amount 
       });
 
       if ('error' in result) {
         toast({ title: 'Error Suggesting Alternatives', description: result.error, variant: 'destructive' });
-        // Keep modal open on error if needed, or close:
-        // setIsSuggestModalOpen(false); 
         return;
       }
       
-      setSubscriptions(subs => subs.map(s => s.id === subId ? { ...s, alternatives: result.alternatives, alternativesReasoning: result.reasoning, userNeeds } : s));
+      // userNeeds removed from being set here, though it might exist on the Subscription type
+      setSubscriptions(subs => subs.map(s => s.id === subId ? { ...s, alternatives: result.alternatives, alternativesReasoning: result.reasoning } : s));
       toast({ title: 'Alternatives Found', description: `Alternatives for ${sub.vendor} suggested.` });
       setIsSuggestModalOpen(false); 
     } catch (e) {
@@ -172,7 +172,7 @@ export default function DashboardPage() {
       <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold">Subscription Dashboard</CardTitle>
-           <Button onClick={handleSyncBankDataClick} variant="outline" disabled={isLoading}>
+           <Button onClick={handleSyncBankDataClick} variant="outline" disabled={isLoading && subscriptions.length > 0}>
             <FileScan className="mr-2 h-4 w-4" /> Sync Bank Data (CSV)
           </Button>
           <input
@@ -221,7 +221,7 @@ export default function DashboardPage() {
           onSuggestAlternatives={handleOpenSuggestModal}
           onToggleUnused={handleToggleUnused}
           onDeleteSubscription={handleDeleteSubscription}
-          isLoading={isLoading} 
+          isLoading={isLoading && subscriptions.length === 0} 
         />
       )}
 
@@ -230,8 +230,8 @@ export default function DashboardPage() {
           isOpen={isSuggestModalOpen}
           onClose={() => { setIsSuggestModalOpen(false); setSelectedSubscription(null); }}
           subscription={selectedSubscription}
-          onSuggest={onSuggestAlternatives}
-          isLoading={isSuggestingAlternatives} // Pass the new loading state
+          onSuggest={onSuggestAlternatives} // Signature updated
+          isLoading={isSuggestingAlternatives}
         />
       )}
     </div>

@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import type { Subscription } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,16 +12,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+// Label and Textarea are removed as userNeeds input is removed
+// import { Label } from '@/components/ui/label';
+// import { Textarea } from '@/components/ui/textarea';
+import { Loader2 } from 'lucide-react'; // AlertTriangle removed as userNeeds validation is gone
+// import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Alert components removed
 
 type AlternativeSuggestionModalProps = {
   isOpen: boolean;
   onClose: () => void;
   subscription: Subscription;
-  onSuggest: (subscriptionId: string, userNeeds: string) => Promise<void>;
+  onSuggest: (subscriptionId: string) => Promise<void>; // userNeeds removed from signature
   isLoading: boolean;
 };
 
@@ -31,28 +33,21 @@ export default function AlternativeSuggestionModal({
   onSuggest,
   isLoading,
 }: AlternativeSuggestionModalProps) {
-  const [userNeeds, setUserNeeds] = useState(subscription.userNeeds || '');
-  const [error, setError] = useState<string | null>(null);
+  // userNeeds state and related error state are removed
+  // const [userNeeds, setUserNeeds] = useState(subscription.userNeeds || '');
+  // const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setUserNeeds(subscription.userNeeds || '');
-      setError(null);
+      // setUserNeeds(subscription.userNeeds || ''); // No longer needed
+      // setError(null); // No longer needed
     }
   }, [isOpen, subscription]);
 
   const handleSubmit = async () => {
-    if (!userNeeds.trim()) {
-      setError('Please describe your needs for this subscription.');
-      return;
-    }
-     if (userNeeds.trim().length < 10) {
-      setError('Please provide a more detailed description of your needs (at least 10 characters).');
-      return;
-    }
-    setError(null);
-    // The onSuggest function in dashboard/page.tsx already handles passing subscription.vendor as subscriptionName
-    await onSuggest(subscription.id, userNeeds);
+    // Validation for userNeeds is removed
+    // setError(null); // No longer needed if error state is removed
+    await onSuggest(subscription.id); // userNeeds removed from call
   };
 
   return (
@@ -61,31 +56,13 @@ export default function AlternativeSuggestionModal({
         <DialogHeader>
           <DialogTitle>Find Alternatives for {subscription.vendor}</DialogTitle>
           <DialogDescription>
-            Current cost: ${subscription.amount.toFixed(2)} / {subscription.frequency}. 
-            Describe what you primarily use this subscription for to get better alternative suggestions.
+            Current cost: ${subscription.amount.toFixed(2)} / {subscription.frequency}.
+            We&apos;ll find alternatives based on common uses for this subscription.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-           {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Validation Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          <div className="grid grid-cols-1 items-center gap-4">
-            <Label htmlFor="userNeeds" className="text-left">
-              Your Needs / How you use it
-            </Label>
-            <Textarea
-              id="userNeeds"
-              value={userNeeds}
-              onChange={(e) => setUserNeeds(e.target.value)}
-              placeholder="e.g., I use it for streaming movies, listening to music, cloud storage..."
-              className="col-span-3 min-h-[100px] focus:ring-primary"
-              disabled={isLoading}
-            />
-          </div>
+          {/* Error display related to userNeeds removed */}
+          {/* Textarea and Label for userNeeds removed */}
            {subscription.alternatives && subscription.alternatives.length > 0 && (
             <div className="mt-4">
               <h4 className="font-semibold mb-2 text-sm">Previously Suggested Alternatives:</h4>

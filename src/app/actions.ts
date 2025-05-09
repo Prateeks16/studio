@@ -1,3 +1,4 @@
+
 'use server';
 
 import { detectRecurringCharges, DetectRecurringChargesInput, DetectRecurringChargesOutput } from '@/ai/flows/detect-recurring-charges';
@@ -12,9 +13,8 @@ const DetectChargesSchema = z.object({
 // PredictRenewalSchema is removed
 
 const SuggestAlternativesSchema = z.object({
-  subscriptionName: z.string(), // This will be the vendor name
-  userNeeds: z.string().min(5, "User needs must be at least 5 characters long."),
-  currentCost: z.number(),
+  subscriptionName: z.string().min(1, "Subscription name cannot be empty."),
+  currentCost: z.number().positive("Current cost must be a positive number."),
 });
 
 export async function handleDetectCharges(input: DetectRecurringChargesInput): Promise<DetectRecurringChargesOutput | { error: string }> {
