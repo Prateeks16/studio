@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Subscription, SubscriptionStatus } from '@/types';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Loader2, AlertCircle, PlayCircle, PauseCircle } from 'lucide-react';
+import { RefreshCw, Loader2, AlertCircle, PlayCircle, PauseCircle } from 'lucide-react'; // Changed Trash2 to RefreshCw
 import { format, parseISO, isValid } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -13,8 +14,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 type SubscriptionsListProps = {
   subscriptions: Subscription[];
   onToggleUnused: (subscriptionId: string) => void; 
-  onDeleteSubscription: (subscriptionId: string) => void;
-  onChargeSubscription: (subscription: Subscription) => void; // Still passed but not used in this column directly
+  onRenewSubscription: (subscriptionId: string) => void; // Changed from onDeleteSubscription
+  onChargeSubscription: (subscription: Subscription) => void;
   onToggleSubscriptionStatus: (subscriptionId: string, newStatus: SubscriptionStatus) => void;
   isProcessingAction: boolean;
   isLoading: boolean;
@@ -23,8 +24,8 @@ type SubscriptionsListProps = {
 export default function SubscriptionsList({
   subscriptions,
   onToggleUnused,
-  onDeleteSubscription,
-  onChargeSubscription, // Prop remains for potential future use or other components
+  onRenewSubscription, // Changed from onDeleteSubscription
+  onChargeSubscription,
   onToggleSubscriptionStatus,
   isProcessingAction,
   isLoading
@@ -165,17 +166,17 @@ export default function SubscriptionsList({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button 
-                          variant="ghost" 
+                          variant="outline" // Changed from ghost and removed destructive text
                           size="icon" 
-                          onClick={() => onDeleteSubscription(sub.id)} 
+                          onClick={() => onRenewSubscription(sub.id)} // Changed from onDeleteSubscription
                           disabled={isProcessingAction}
-                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          aria-label="Delete Subscription"
+                          className="text-primary hover:bg-primary/10 hover:text-primary" // Non-destructive styling
+                          aria-label="Renew Subscription" // Changed aria-label
                         >
-                          {isProcessingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                          {isProcessingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent>Delete Subscription</TooltipContent>
+                      <TooltipContent>Renew Subscription</TooltipContent> 
                     </Tooltip>
                   </TableCell>
                 </TableRow>

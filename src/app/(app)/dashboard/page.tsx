@@ -5,18 +5,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import type { Subscription, SubscriptionStatus } from '@/types'; // Transaction type removed
+import type { Subscription, SubscriptionStatus } from '@/types';
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
 import AlertsSection from '@/components/dashboard/alerts-section';
-// TransactionHistoryList import removed
 import { 
   handleDetectCharges, 
 } from '@/app/actions';
 import { 
-  // getTransactions as getTransactionsService, // Removed
   chargeForSubscription as chargeForSubscriptionService 
 } from '@/services/walletService';
 import { toggleSubscriptionStatus as toggleSubscriptionStatusService } from '@/services/subscriptionService';
+import { format, addMonths, addYears, parseISO } from 'date-fns';
 
 import { BarChart3, FileScan, Loader2 } from 'lucide-react';
 import Image from 'next/image';
@@ -29,13 +28,9 @@ export default function DashboardPage() {
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // transactions state and setTransactions removed
-
-  // fetchTransactionData function removed
 
   useEffect(() => {
     setIsLoading(true);
-    // fetchTransactionData call removed
 
     const storedSubscriptions = localStorage.getItem('payright-subscriptions');
     if (storedSubscriptions) {
@@ -101,9 +96,46 @@ export default function DashboardPage() {
     }
   };
   
-  const handleDeleteSubscription = (subId: string) => {
-    setSubscriptions(subs => subs.filter(s => s.id !== subId));
-    toast({ title: 'Subscription Removed', description: 'The subscription has been removed from your list.' });
+  const handleRenewSubscription = (subId: string) => {
+    setIsProcessingAction(true);
+    setSubscriptions(subs => 
+      subs.map(s => {
+        if (s.id === subId) {
+          const today = new Date();
+          const newLastPaymentDate = format(today, 'yyyy-MM-dd');
+          let newNextDueDate = newLastPaymentDate; // Fallback
+          
+          try {
+            const baseDateForNext = parseISO(newLastPaymentDate);
+            if (s.frequency.toLowerCase() === 'monthly') {
+              newNextDueDate = format(addMonths(baseDateForNext, 1), 'yyyy-MM-dd');
+            } else if (s.frequency.toLowerCase() === 'yearly') {
+              newNextDueDate = format(addYears(baseDateForNext, 1), 'yyyy-MM-dd');
+            } else {
+              // Default or attempt to parse frequency if it's like "X days"
+              // For now, simple monthly/yearly, or keep same as last payment as fallback.
+              // A more robust solution would parse various frequency strings.
+              newNextDueDate = format(addMonths(baseDateForNext, 1), 'yyyy-MM-dd'); // Default to monthly if unknown
+            }
+          } catch (e) {
+            console.error("Error calculating next due date during renewal:", e);
+            // Fallback: next due date will be same as last payment date if calculation fails
+            newNextDueDate = newLastPaymentDate;
+          }
+
+          toast({ title: 'Subscription Renewed', description: `${s.vendor} has been renewed. Next due date: ${newNextDueDate}.` });
+          return {
+            ...s,
+            last_payment_date: newLastPaymentDate,
+            next_due_date: newNextDueDate,
+            // Optionally, if renewal should also ensure it's active:
+            // status: 'active' as SubscriptionStatus, 
+          };
+        }
+        return s;
+      })
+    );
+    setIsProcessingAction(false);
   };
 
   const handleSyncBankDataClick = () => {
@@ -139,12 +171,10 @@ export default function DashboardPage() {
     try {
       const result = await chargeForSubscriptionService(MOCK_USER_ID, sub); 
       if (result.success) {
-        // fetchTransactionData call removed, wallet page will update itself via event
         window.dispatchEvent(new CustomEvent('payright-wallet-updated'));
         window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
         toast({ title: 'Charge Successful', description: `${sub.vendor} charged. New balance: $${result.newBalance.toFixed(2)}` });
       } else {
-        // fetchTransactionData call removed
         window.dispatchEvent(new CustomEvent('payright-wallet-updated'));
         window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
         toast({ title: 'Charge Failed', description: `Could not charge ${sub.vendor}. Insufficient funds.`, variant: 'destructive' });
@@ -152,7 +182,6 @@ export default function DashboardPage() {
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred during charging.";
       toast({ title: 'Charging Error', description: errorMessage, variant: 'destructive' });
-      // fetchTransactionData call removed
       window.dispatchEvent(new CustomEvent('payright-wallet-updated'));
       window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
     } finally {
@@ -168,7 +197,6 @@ export default function DashboardPage() {
         toast({ title: 'Status Update Error', description: "Subscription not found or failed to update.", variant: 'destructive' });
       } else {
         setSubscriptions(subs => subs.map(s => s.id === subId ? updatedSubscription : s));
-        // fetchTransactionData call removed
         window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
         toast({ title: 'Status Updated', description: `${updatedSubscription.vendor} status set to ${newStatus}.` });
       }
@@ -208,8 +236,6 @@ export default function DashboardPage() {
       
       <AlertsSection subscriptions={subscriptions} />
 
-      {/* TransactionHistoryList component removed */}
-
       {subscriptions.length === 0 && !isLoading ? (
         <Card className="text-center py-12 shadow-md">
           <CardHeader>
@@ -245,7 +271,7 @@ export default function DashboardPage() {
         ) : (
             <SubscriptionsList
             subscriptions={subscriptions}
-            onDeleteSubscription={handleDeleteSubscription}
+            onRenewSubscription={handleRenewSubscription}
             onChargeSubscription={onChargeSubscription}
             onToggleSubscriptionStatus={onToggleSubscriptionStatus}
             isProcessingAction={isProcessingAction}
