@@ -1,5 +1,4 @@
 
-'use server';
 import type { Wallet, Transaction, Subscription, TransactionType } from '@/types';
 import { getWalletFromStorage, saveWalletToStorage, saveTransactionToStorage, getTransactionsFromStorage } from '@/lib/localStorageUtils';
 
@@ -59,3 +58,4 @@ export async function chargeForSubscription(userId: string = MOCK_USER_ID, subsc
 export async function getTransactions(userId: string = MOCK_USER_ID): Promise<Transaction[]> {
   return getTransactionsFromStorage(userId);
 }
+

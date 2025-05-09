@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -11,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
 import SidebarWalletWidget from './sidebar-wallet-widget';
-import { CircleDollarSign, UserCircle, LogOut, Settings } from 'lucide-react';
+import { CircleDollarSign, LogOut, Settings } from 'lucide-react'; // UserCircle removed as avatar is directly used
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useRouter } from 'next/navigation'; 
@@ -26,11 +27,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Wallet } from '@/types';
-import { handleGetWalletAndTransactions, handleAddFunds } from '@/app/actions';
+// Import client-side services directly
+import { getWallet as getWalletService, addFunds as addFundsService } from '@/services/walletService';
+// handleGetWalletAndTransactions and handleAddFunds from actions.ts are removed
 import AddFundsModal from '@/components/dashboard/add-funds-modal';
 import { useToast } from "@/hooks/use-toast";
 
-const MOCK_USER_ID = 'defaultUser'; // Define MOCK_USER_ID for fallback
+const MOCK_USER_ID = 'defaultUser'; 
 
 type AppLayoutProps = {
   children: React.ReactNode;
@@ -48,15 +51,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const fetchWalletData = React.useCallback(async () => {
     setIsWalletLoading(true);
-    const { wallet: fetchedWallet, error } = await handleGetWalletAndTransactions();
-    if (error) {
-      toast({ title: 'Error fetching wallet data', description: error, variant: 'destructive' });
-      setWallet({ userId: MOCK_USER_ID, balance: 0 }); // Fallback to a default wallet on error
-    } else {
-      setWallet(fetchedWallet || { userId: MOCK_USER_ID, balance: 0 }); // Ensure a default wallet object if fetchedWallet is undefined
+    try {
+      const fetchedWallet = await getWalletService(MOCK_USER_ID);
+      setWallet(fetchedWallet || { userId: MOCK_USER_ID, balance: 0 });
+    } catch (e: any) {
+      const errorMessage = e instanceof Error ? e.message : "Failed to retrieve wallet data.";
+      toast({ title: 'Error fetching wallet data', description: errorMessage, variant: 'destructive' });
+      setWallet({ userId: MOCK_USER_ID, balance: 0 }); 
+    } finally {
+      setIsWalletLoading(false);
     }
-    setIsWalletLoading(false);
-  }, [toast]);
+  }, [toast]); // MOCK_USER_ID is a constant, so not needed in deps array.
 
   React.useEffect(() => {
     fetchWalletData();
@@ -64,23 +69,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const onAddFundsSubmit = async (amount: number) => {
     setIsAddingFunds(true);
-    const formData = new FormData();
-    formData.append('amount', amount.toString());
-    const result = await handleAddFunds(formData);
-    setIsAddingFunds(false);
-    if (result.error) {
-      toast({ title: 'Error Adding Funds', description: result.error, variant: 'destructive' });
-    } else if (result.wallet) {
-      // Removed direct setWallet(result.wallet);
-      // Rely solely on fetchWalletData to refresh the wallet state from the source of truth (localStorage)
-      await fetchWalletData(); 
+    try {
+      await addFundsService(MOCK_USER_ID, amount); // Call client-side service
+      await fetchWalletData(); // Re-fetch wallet data to update UI
       toast({ title: 'Funds Added', description: `Successfully added $${amount.toFixed(2)} to your wallet.` });
       setIsAddFundsModalOpen(false);
+    } catch (e: any) {
+      const errorMessage = e instanceof Error ? e.message : "Failed to add funds.";
+      toast({ title: 'Error Adding Funds', description: errorMessage, variant: 'destructive' });
+    } finally {
+      setIsAddingFunds(false);
     }
   };
 
   const handleLogout = () => {
-    // In a real app, you would clear session/token here
     router.push('/login');
   };
 
@@ -162,3 +164,4 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </SidebarProvider>
   );
 }
+

@@ -1,5 +1,4 @@
 
-'use server';
 import type { Subscription, SubscriptionStatus, Transaction } from '@/types';
 import { getSubscriptionsFromStorage, updateSubscriptionInStorage, saveTransactionToStorage } from '@/lib/localStorageUtils';
 
@@ -15,7 +14,9 @@ export async function toggleSubscriptionStatus(
 
   if (subIndex === -1) {
     console.error(`Subscription with ID ${subscriptionId} not found.`);
-    return null;
+    // Instead of returning null which can be hard to debug, throw an error or return an object indicating failure
+    // For now, align with existing possible null return, but consider changing.
+    return null; 
   }
 
   const subscription = subscriptions[subIndex];
@@ -35,3 +36,4 @@ export async function toggleSubscriptionStatus(
 
   return subscription;
 }
+

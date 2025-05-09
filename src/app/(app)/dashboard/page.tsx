@@ -5,21 +5,23 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import type { Subscription, Wallet, Transaction, SubscriptionStatus } from '@/types';
+import type { Subscription, Transaction, SubscriptionStatus } from '@/types';
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
 import AlternativeSuggestionModal from '@/components/dashboard/alternative-suggestion-modal';
 import AlertsSection from '@/components/dashboard/alerts-section';
-// import WalletDisplay from '@/components/dashboard/wallet-display'; // Removed
-// import AddFundsModal from '@/components/dashboard/add-funds-modal'; // Removed - Handled by AppLayout
 import TransactionHistoryList from '@/components/dashboard/transaction-history-list';
+// Import AI-related actions
 import { 
   handleDetectCharges, 
   handleSuggestAlternatives,
-  // handleAddFunds, // Removed - Handled by AppLayout
-  handleChargeSubscription,
-  handleToggleSubscriptionStatus,
-  handleGetWalletAndTransactions
 } from '@/app/actions';
+// Import client-side services directly
+import { 
+  getTransactions as getTransactionsService,
+  chargeForSubscription as chargeForSubscriptionService 
+} from '@/services/walletService';
+import { toggleSubscriptionStatus as toggleSubscriptionStatusService } from '@/services/subscriptionService';
+
 import { BarChart3, FileScan, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -36,23 +38,18 @@ export default function DashboardPage() {
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [isSuggestingAlternatives, setIsSuggestingAlternatives] = useState(false);
 
-  // Wallet state is no longer managed here, AppLayout handles it
-  // const [wallet, setWallet] = useState<Wallet | null>(null); 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  // AddFundsModal related state is removed, AppLayout handles it
-  // const [isAddFundsModalOpen, setIsAddFundsModalOpen] = useState(false);
-  // const [isAddingFunds, setIsAddingFunds] = useState(false);
 
-
-  // Fetches only transactions now, wallet is handled by AppLayout
   const fetchTransactionData = async () => {
-    // Wallet balance is fetched and managed by AppLayout's SidebarWalletWidget
-    // We still need transactions for the TransactionHistoryList on the dashboard
-    const { transactions: fetchedTransactions, error } = await handleGetWalletAndTransactions();
-    if (error) {
-      toast({ title: 'Error fetching transaction data', description: error, variant: 'destructive' });
-    } else {
+    // Wallet balance is displayed by AppLayout's SidebarWalletWidget
+    // We only need transactions for the TransactionHistoryList on the dashboard
+    try {
+      const fetchedTransactions = await getTransactionsService(MOCK_USER_ID);
       setTransactions(fetchedTransactions || []);
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch transaction data.";
+      toast({ title: 'Error fetching transaction data', description: errorMessage, variant: 'destructive' });
+      setTransactions([]);
     }
   };
 
@@ -94,7 +91,7 @@ export default function DashboardPage() {
   const onChargesDetected = async (bankData: string) => {
     setIsLoading(true);
     setSubscriptions([]); 
-    const result = await handleDetectCharges({ bankData });
+    const result = await handleDetectCharges({ bankData }); // AI action call
     setIsLoading(false);
 
     if ('error' in result) {
@@ -126,7 +123,7 @@ export default function DashboardPage() {
     
     setIsSuggestingAlternatives(true);
     try {
-      const result = await handleSuggestAlternatives({ 
+      const result = await handleSuggestAlternatives({ // AI action call
         subscriptionName: subToUpdate.vendor, 
         currentCost: subToUpdate.amount 
       });
@@ -140,12 +137,13 @@ export default function DashboardPage() {
           alternativesReasoning: result.reasoning 
         };
         setSubscriptions(subs => subs.map(s => s.id === subId ? updatedSubscriptionWithAlternatives : s));
-        setSelectedSubscription(updatedSubscriptionWithAlternatives);
+        setSelectedSubscription(updatedSubscriptionWithAlternatives); // For modal display
         toast({ title: 'Alternatives Found', description: `Alternatives for ${subToUpdate.vendor} suggested.` });
       }
     } catch (e) {
       console.error("Exception in onSuggestAlternatives:", e);
-      toast({ title: 'Error Suggesting Alternatives', description: "An unexpected error occurred.", variant: 'destructive' });
+      const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred.";
+      toast({ title: 'Error Suggesting Alternatives', description: errorMessage, variant: 'destructive' });
     } finally {
       setIsSuggestingAlternatives(false);
     }
@@ -199,44 +197,49 @@ export default function DashboardPage() {
     }
   };
 
-  // onAddFundsSubmit is removed, AppLayout handles it
-
   const onChargeSubscription = async (sub: Subscription) => {
     setIsProcessingAction(true);
-    const result = await handleChargeSubscription(sub);
-    setIsProcessingAction(false);
-    if (result.error) {
-      toast({ title: 'Charging Error', description: result.error, variant: 'destructive' });
-    } else {
-      if (result.success && result.newBalance !== undefined && result.transaction) {
-        // Wallet state is updated by AppLayout, but we need to refresh transactions here
-        await fetchTransactionData(); 
-        toast({ title: 'Charge Successful', description: `${sub.vendor} charged successfully. New balance: $${result.newBalance.toFixed(2)}` });
+    try {
+      const result = await chargeForSubscriptionService(MOCK_USER_ID, sub); // Direct service call
+      if (result.success) {
+        await fetchTransactionData(); // Refresh local transactions
+        // AppLayout's wallet will be updated on its next fetch triggered by its own actions or page reload.
+        toast({ title: 'Charge Successful', description: `${sub.vendor} charged. New balance: $${result.newBalance.toFixed(2)}` });
       } else {
-        await fetchTransactionData(); // Refresh transactions even on failure if a transaction record was created
-        toast({ title: 'Charge Failed', description: `Could not charge ${sub.vendor}. Insufficient funds or other error.`, variant: 'destructive' });
+        await fetchTransactionData(); // Refresh transactions to show failed attempt
+        toast({ title: 'Charge Failed', description: `Could not charge ${sub.vendor}. Insufficient funds.`, variant: 'destructive' });
       }
+    } catch (e: any) {
+      const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred during charging.";
+      toast({ title: 'Charging Error', description: errorMessage, variant: 'destructive' });
+      await fetchTransactionData(); // Refresh transactions even on error
+    } finally {
+      setIsProcessingAction(false);
     }
   };
 
   const onToggleSubscriptionStatus = async (subId: string, newStatus: SubscriptionStatus) => {
     setIsProcessingAction(true);
-    const result = await handleToggleSubscriptionStatus(subId, newStatus);
-    setIsProcessingAction(false);
-    if (result.error) {
-      toast({ title: 'Status Update Error', description: result.error, variant: 'destructive' });
-    } else if (result.subscription) {
-      setSubscriptions(subs => subs.map(s => s.id === subId ? result.subscription! : s));
-      await fetchTransactionData(); // Refresh transactions to show status change
-      toast({ title: 'Status Updated', description: `${result.subscription.vendor} status set to ${newStatus}.` });
+    try {
+      const updatedSubscription = await toggleSubscriptionStatusService(MOCK_USER_ID, subId, newStatus); // Direct service call
+      if (!updatedSubscription) {
+        toast({ title: 'Status Update Error', description: "Subscription not found or failed to update.", variant: 'destructive' });
+      } else {
+        setSubscriptions(subs => subs.map(s => s.id === subId ? updatedSubscription : s));
+        await fetchTransactionData(); // Refresh transactions to show status change log
+        toast({ title: 'Status Updated', description: `${updatedSubscription.vendor} status set to ${newStatus}.` });
+      }
+    } catch (e: any) {
+      const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred while updating status.";
+      toast({ title: 'Status Update Error', description: errorMessage, variant: 'destructive' });
+    } finally {
+      setIsProcessingAction(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* WalletDisplay removed from here */}
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1"> 
-        {/* Grid adjusted for single column as WalletDisplay is removed */}
         <Card className="shadow-lg col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Subscription Management</CardTitle>
@@ -319,9 +322,6 @@ export default function DashboardPage() {
           isLoading={isSuggestingAlternatives}
         />
       )}
-
-      {/* AddFundsModal removed from here - handled by AppLayout */}
     </div>
   );
 }
-
