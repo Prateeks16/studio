@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -31,6 +30,8 @@ import { handleGetWalletAndTransactions, handleAddFunds } from '@/app/actions';
 import AddFundsModal from '@/components/dashboard/add-funds-modal';
 import { useToast } from "@/hooks/use-toast";
 
+const MOCK_USER_ID = 'defaultUser'; // Define MOCK_USER_ID for fallback
+
 type AppLayoutProps = {
   children: React.ReactNode;
 };
@@ -50,9 +51,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const { wallet: fetchedWallet, error } = await handleGetWalletAndTransactions();
     if (error) {
       toast({ title: 'Error fetching wallet data', description: error, variant: 'destructive' });
-      setWallet(null);
+      setWallet({ userId: MOCK_USER_ID, balance: 0 }); // Fallback to a default wallet on error
     } else {
-      setWallet(fetchedWallet || { userId: 'defaultUser', balance: 0 });
+      setWallet(fetchedWallet || { userId: MOCK_USER_ID, balance: 0 }); // Ensure a default wallet object if fetchedWallet is undefined
     }
     setIsWalletLoading(false);
   }, [toast]);
@@ -70,11 +71,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
     if (result.error) {
       toast({ title: 'Error Adding Funds', description: result.error, variant: 'destructive' });
     } else if (result.wallet) {
-      setWallet(result.wallet);
-      // Re-fetch wallet data to ensure consistency if other components also display it
-      // or rely on more complex state updates from the server action.
-      // For now, just updating local state is fine for the sidebar widget.
-      await fetchWalletData(); // Ensures the balance is up-to-date after adding funds.
+      // Removed direct setWallet(result.wallet);
+      // Rely solely on fetchWalletData to refresh the wallet state from the source of truth (localStorage)
+      await fetchWalletData(); 
       toast({ title: 'Funds Added', description: `Successfully added $${amount.toFixed(2)} to your wallet.` });
       setIsAddFundsModalOpen(false);
     }
