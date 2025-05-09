@@ -9,11 +9,9 @@ import type { Wallet, Transaction } from '@/types';
 import { getWallet as getWalletService, getTransactions as getTransactionsService } from '@/services/walletService';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, Wallet as WalletIcon, Loader2, PlusCircle } from 'lucide-react';
-// AddFundsModal will be triggered from AppLayout, so we don't import it here directly.
-// We need a way for AppLayout to open it, possibly via a shared state or prop drilling if this page needs to trigger it.
-// For now, this page displays info, AppLayout handles the modal.
 
 const MOCK_USER_ID = 'defaultUser';
+const OPEN_ADD_FUNDS_MODAL_EVENT = 'payright-request-open-add-funds-modal';
 
 export default function WalletPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -55,7 +53,6 @@ export default function WalletPage() {
     fetchTransactionData();
   }, [fetchWalletData, fetchTransactionData]);
   
-  // Listen for custom events to refresh data when AddFundsModal (in AppLayout) completes
   useEffect(() => {
     const handleWalletUpdate = () => fetchWalletData();
     const handleTransactionsUpdate = () => fetchTransactionData();
@@ -69,16 +66,13 @@ export default function WalletPage() {
     };
   }, [fetchWalletData, fetchTransactionData]);
 
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
 
-  // The button to open AddFundsModal needs to communicate with AppLayout.
-  // This is a simplification. A more robust solution would use context or a global state manager.
-  // For now, clicking it does nothing on this page directly, user uses sidebar button.
-  // Or, we can pass a function from AppLayout if needed.
-  // Let's assume the sidebar "Add Funds" button in AppLayout is the primary way.
+  const handleOpenAddFundsModal = () => {
+    window.dispatchEvent(new CustomEvent(OPEN_ADD_FUNDS_MODAL_EVENT));
+  };
 
   return (
     <div className="space-y-6">
@@ -88,16 +82,9 @@ export default function WalletPage() {
             <WalletIcon className="h-6 w-6 text-primary mr-3" />
             <CardTitle className="text-xl font-semibold">My Wallet</CardTitle>
           </div>
-           {/* The "Add Funds" button in the sidebar (AppLayout) is the main trigger.
-               This button is illustrative if we wanted a page-specific trigger.
-          <Button variant="outline" onClick={() => {
-             // This would ideally call a function exposed by AppLayout to open the modal
-             console.log("Request to open AddFundsModal - needs AppLayout integration");
-             toast({title: "Add Funds", description: "Use the 'Add Funds' button in the sidebar."})
-          }}>
+          <Button variant="outline" onClick={handleOpenAddFundsModal}>
             <PlusCircle className="mr-2 h-4 w-4" /> Add Funds
           </Button>
-          */}
         </CardHeader>
         <CardContent>
           <CardDescription>View your current balance and manage funds.</CardDescription>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+// Textarea removed as it's no longer used
 import { useToast } from '@/hooks/use-toast';
 import type { Subscription, SuggestSubscriptionAlternativesOutput } from '@/types';
 import { handleSuggestAlternatives } from '@/app/actions';
@@ -178,12 +178,15 @@ export default function AiSuggestionsPage() {
               <p className="text-muted-foreground">The AI could not find specific alternatives for this subscription at the moment.</p>
             )}
             
+            {/* Reasoning section has been removed */}
+            {/* 
             {suggestionResult.reasoning && (
                 <div>
                     <h4 className="font-semibold mb-1 text-foreground">AI's Reasoning:</h4>
                     <p className="text-sm text-muted-foreground italic bg-secondary/30 p-3 rounded-md">{suggestionResult.reasoning}</p>
                 </div>
             )}
+            */}
           </CardContent>
         </Card>
       )}

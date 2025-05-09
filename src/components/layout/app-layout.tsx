@@ -26,13 +26,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { Wallet, Transaction } from '@/types';
+import type { Wallet } from '@/types'; // Transaction type removed as transactions aren't directly managed here for display
 import { getWallet as getWalletService, addFunds as addFundsService, getTransactions as getTransactionsService } from '@/services/walletService';
 import AddFundsModal from '@/components/dashboard/add-funds-modal';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils'; // For conditional class names
 
 const MOCK_USER_ID = 'defaultUser'; 
+const OPEN_ADD_FUNDS_MODAL_EVENT = 'payright-request-open-add-funds-modal';
+
 
 type AppLayoutProps = {
   children: React.ReactNode;
@@ -43,12 +45,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter(); 
   const { toast } = useToast();
 
-  // Wallet and transaction state remains in AppLayout for AddFundsModal
   const [wallet, setWallet] = React.useState<Wallet | null>(null);
   const [isWalletLoading, setIsWalletLoading] = React.useState(true);
-  // Transactions are fetched but not directly passed down as a widget anymore
-  // const [transactions, setTransactions] = React.useState<Transaction[]>([]);
-  // const [isTransactionsLoading, setIsTransactionsLoading] = React.useState(true);
   
   const [isAddFundsModalOpen, setIsAddFundsModalOpen] = React.useState(false);
   const [isAddingFunds, setIsAddingFunds] = React.useState(false);
@@ -67,14 +65,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
   }, [toast]);
 
-  // Fetch transactions primarily for the modal to refresh global state; pages will fetch their own display data
   const fetchTransactionDataForModalRefresh = React.useCallback(async () => {
     try {
-      // This function is called after adding funds to ensure any dependent components update.
-      // The actual display of transactions is handled by the /wallet page now.
       await getTransactionsService(MOCK_USER_ID); 
     } catch (e: any) {
-      // Silently fail or log, as the primary display is elsewhere
       console.error("Error refreshing transactions for modal context:", e);
     }
   }, []);
@@ -82,18 +76,27 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   React.useEffect(() => {
     fetchWalletData();
-    // No need to fetch all transactions here for display, only for potential refresh context
-    // fetchTransactionDataForModalRefresh(); 
   }, [fetchWalletData]);
+
+  // Event listener for opening AddFundsModal
+  React.useEffect(() => {
+    const handleRequestOpenModal = () => {
+      setIsAddFundsModalOpen(true);
+    };
+    window.addEventListener(OPEN_ADD_FUNDS_MODAL_EVENT, handleRequestOpenModal);
+    return () => {
+      window.removeEventListener(OPEN_ADD_FUNDS_MODAL_EVENT, handleRequestOpenModal);
+    };
+  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+
 
   const onAddFundsSubmit = async (amount: number) => {
     setIsAddingFunds(true);
     try {
       await addFundsService(MOCK_USER_ID, amount); 
-      await fetchWalletData(); // Refresh wallet balance in AppLayout (e.g. for a potential header display)
-      await fetchTransactionDataForModalRefresh(); // Signal that transactions updated (e.g. for /wallet page)
+      await fetchWalletData(); 
+      await fetchTransactionDataForModalRefresh(); 
       
-      // Dispatch a custom event to notify other components (like /wallet page) that transactions were updated
       window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
       window.dispatchEvent(new CustomEvent('payright-wallet-updated'));
 
@@ -132,8 +135,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </SidebarHeader>
         <SidebarContent className="flex flex-col"> {/* Ensure content can grow and push footer down */}
           <SidebarNav />
-          {/* SidebarWalletWidget and SidebarAiSuggestionWidget removed from here */}
-          {/* Minimal Wallet Info and Add Funds directly in Sidebar Footer area or a small static component */}
           <div className="mt-auto p-2 group-data-[collapsible=icon]:p-1 border-t border-sidebar-border">
              <div className={cn(
                 "flex items-center justify-between p-2 rounded-md group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1 group-data-[collapsible=icon]:space-y-1",
@@ -220,4 +221,3 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </SidebarProvider>
   );
 }
-
