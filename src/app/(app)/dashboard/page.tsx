@@ -9,13 +9,13 @@ import type { Subscription, Wallet, Transaction, SubscriptionStatus } from '@/ty
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
 import AlternativeSuggestionModal from '@/components/dashboard/alternative-suggestion-modal';
 import AlertsSection from '@/components/dashboard/alerts-section';
-import WalletDisplay from '@/components/dashboard/wallet-display';
-import AddFundsModal from '@/components/dashboard/add-funds-modal';
+// import WalletDisplay from '@/components/dashboard/wallet-display'; // Removed
+// import AddFundsModal from '@/components/dashboard/add-funds-modal'; // Removed - Handled by AppLayout
 import TransactionHistoryList from '@/components/dashboard/transaction-history-list';
 import { 
   handleDetectCharges, 
   handleSuggestAlternatives,
-  handleAddFunds,
+  // handleAddFunds, // Removed - Handled by AppLayout
   handleChargeSubscription,
   handleToggleSubscriptionStatus,
   handleGetWalletAndTransactions
@@ -36,31 +36,35 @@ export default function DashboardPage() {
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
   const [isSuggestingAlternatives, setIsSuggestingAlternatives] = useState(false);
 
-  const [wallet, setWallet] = useState<Wallet | null>(null);
+  // Wallet state is no longer managed here, AppLayout handles it
+  // const [wallet, setWallet] = useState<Wallet | null>(null); 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isAddFundsModalOpen, setIsAddFundsModalOpen] = useState(false);
-  const [isAddingFunds, setIsAddingFunds] = useState(false);
+  // AddFundsModal related state is removed, AppLayout handles it
+  // const [isAddFundsModalOpen, setIsAddFundsModalOpen] = useState(false);
+  // const [isAddingFunds, setIsAddingFunds] = useState(false);
 
-  const fetchWalletData = async () => {
-    const { wallet: fetchedWallet, transactions: fetchedTransactions, error } = await handleGetWalletAndTransactions();
+
+  // Fetches only transactions now, wallet is handled by AppLayout
+  const fetchTransactionData = async () => {
+    // Wallet balance is fetched and managed by AppLayout's SidebarWalletWidget
+    // We still need transactions for the TransactionHistoryList on the dashboard
+    const { transactions: fetchedTransactions, error } = await handleGetWalletAndTransactions();
     if (error) {
-      toast({ title: 'Error fetching wallet data', description: error, variant: 'destructive' });
+      toast({ title: 'Error fetching transaction data', description: error, variant: 'destructive' });
     } else {
-      setWallet(fetchedWallet || { userId: MOCK_USER_ID, balance: 0 });
       setTransactions(fetchedTransactions || []);
     }
   };
 
+
   useEffect(() => {
     setIsLoading(true);
-    fetchWalletData(); // Fetch wallet data on initial load
+    fetchTransactionData(); 
 
-    // Load subscriptions from local storage
     const storedSubscriptions = localStorage.getItem('payright-subscriptions');
     if (storedSubscriptions) {
       try {
         const parsedSubs = JSON.parse(storedSubscriptions) as Subscription[];
-        // Ensure status is initialized for older data
         const subsWithStatus = parsedSubs.map(sub => ({ ...sub, status: sub.status || 'active' }));
         if (Array.isArray(subsWithStatus) && (subsWithStatus.length === 0 || (subsWithStatus.length > 0 && 'vendor' in subsWithStatus[0]))) {
             setSubscriptions(subsWithStatus);
@@ -103,7 +107,7 @@ export default function DashboardPage() {
         ...charge, 
         id: `sub-${Date.now()}-${index}`, 
         isUnused: charge.usage_count === 0, 
-        status: 'active' as SubscriptionStatus, // Default to active
+        status: 'active' as SubscriptionStatus, 
       }));
       setSubscriptions(newSubs); 
       toast({ title: 'Charges Detected', description: `${newSubs.length} potential subscriptions found.` });
@@ -147,7 +151,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleToggleUnused = (subId: string) => { // This can be phased out for status
+  const handleToggleUnused = (subId: string) => { 
     setSubscriptions(subs => 
       subs.map(s => 
         s.id === subId 
@@ -195,21 +199,7 @@ export default function DashboardPage() {
     }
   };
 
-  const onAddFundsSubmit = async (amount: number) => {
-    setIsAddingFunds(true);
-    const formData = new FormData();
-    formData.append('amount', amount.toString());
-    const result = await handleAddFunds(formData);
-    setIsAddingFunds(false);
-    if (result.error) {
-      toast({ title: 'Error Adding Funds', description: result.error, variant: 'destructive' });
-    } else if (result.wallet) {
-      setWallet(result.wallet);
-      await fetchWalletData(); // Refresh transactions
-      toast({ title: 'Funds Added', description: `Successfully added $${amount.toFixed(2)} to your wallet.` });
-      setIsAddFundsModalOpen(false);
-    }
-  };
+  // onAddFundsSubmit is removed, AppLayout handles it
 
   const onChargeSubscription = async (sub: Subscription) => {
     setIsProcessingAction(true);
@@ -219,11 +209,11 @@ export default function DashboardPage() {
       toast({ title: 'Charging Error', description: result.error, variant: 'destructive' });
     } else {
       if (result.success && result.newBalance !== undefined && result.transaction) {
-        setWallet(prev => prev ? { ...prev, balance: result.newBalance } : { userId: MOCK_USER_ID, balance: result.newBalance });
-        setTransactions(prev => [result.transaction!, ...prev]);
+        // Wallet state is updated by AppLayout, but we need to refresh transactions here
+        await fetchTransactionData(); 
         toast({ title: 'Charge Successful', description: `${sub.vendor} charged successfully. New balance: $${result.newBalance.toFixed(2)}` });
       } else {
-         setTransactions(prev => [result.transaction!, ...prev]);
+        await fetchTransactionData(); // Refresh transactions even on failure if a transaction record was created
         toast({ title: 'Charge Failed', description: `Could not charge ${sub.vendor}. Insufficient funds or other error.`, variant: 'destructive' });
       }
     }
@@ -237,16 +227,17 @@ export default function DashboardPage() {
       toast({ title: 'Status Update Error', description: result.error, variant: 'destructive' });
     } else if (result.subscription) {
       setSubscriptions(subs => subs.map(s => s.id === subId ? result.subscription! : s));
-      await fetchWalletData(); // Refresh transactions to show status change
+      await fetchTransactionData(); // Refresh transactions to show status change
       toast({ title: 'Status Updated', description: `${result.subscription.vendor} status set to ${newStatus}.` });
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <WalletDisplay wallet={wallet} onAddFundsClick={() => setIsAddFundsModalOpen(true)} />
-        <Card className="shadow-lg col-span-1 lg:col-span-2">
+      {/* WalletDisplay removed from here */}
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-1"> 
+        {/* Grid adjusted for single column as WalletDisplay is removed */}
+        <Card className="shadow-lg col-span-1">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-lg font-medium">Subscription Management</CardTitle>
             <Button onClick={handleSyncBankDataClick} variant="outline" disabled={isLoading && subscriptions.length > 0}>
@@ -309,7 +300,7 @@ export default function DashboardPage() {
             <SubscriptionsList
             subscriptions={subscriptions}
             onSuggestAlternatives={handleOpenSuggestModal}
-            onToggleUnused={handleToggleUnused} // Can be removed if status fully replaces it
+            onToggleUnused={handleToggleUnused} 
             onDeleteSubscription={handleDeleteSubscription}
             onChargeSubscription={onChargeSubscription}
             onToggleSubscriptionStatus={onToggleSubscriptionStatus}
@@ -329,14 +320,8 @@ export default function DashboardPage() {
         />
       )}
 
-      {isAddFundsModalOpen && (
-        <AddFundsModal
-          isOpen={isAddFundsModalOpen}
-          onClose={() => setIsAddFundsModalOpen(false)}
-          onAddFunds={onAddFundsSubmit}
-          isLoading={isAddingFunds}
-        />
-      )}
+      {/* AddFundsModal removed from here - handled by AppLayout */}
     </div>
   );
 }
+
