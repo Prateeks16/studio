@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import type { Subscription, SubscriptionStatus } from '@/types';
+import type { Subscription, SubscriptionStatus, Transaction } from '@/types';
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
 import AlertsSection from '@/components/dashboard/alerts-section';
 import { 
@@ -15,10 +14,11 @@ import {
   chargeForSubscription as chargeForSubscriptionService 
 } from '@/services/walletService';
 import { toggleSubscriptionStatus as toggleSubscriptionStatusService } from '@/services/subscriptionService';
-import { format, addMonths, addYears, parseISO } from 'date-fns';
+import { format, addMonths, addYears, parseISO, isValid } from 'date-fns'; // Added isValid
 
 import { BarChart3, FileScan, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { saveTransactionToStorage } from '@/lib/localStorageUtils'; // Import for manual transaction logging
 
 const MOCK_USER_ID = 'defaultUser';
 
@@ -96,45 +96,88 @@ export default function DashboardPage() {
     }
   };
   
+  const formatDateSafe = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      const parsedDate = parseISO(dateString);
+      if (isValid(parsedDate)) {
+        return format(parsedDate, 'MMM d, yyyy');
+      }
+      return dateString; 
+    } catch (error) {
+      console.error("Error formatting date:", error, "Date string:", dateString);
+      return dateString;
+    }
+  };
+
   const handleRenewSubscription = (subId: string) => {
     setIsProcessingAction(true);
-    setSubscriptions(subs => 
-      subs.map(s => {
-        if (s.id === subId) {
-          const today = new Date();
-          const newLastPaymentDate = format(today, 'yyyy-MM-dd');
-          let newNextDueDate = newLastPaymentDate; // Fallback
-          
-          try {
-            const baseDateForNext = parseISO(newLastPaymentDate);
-            if (s.frequency.toLowerCase() === 'monthly') {
-              newNextDueDate = format(addMonths(baseDateForNext, 1), 'yyyy-MM-dd');
-            } else if (s.frequency.toLowerCase() === 'yearly') {
-              newNextDueDate = format(addYears(baseDateForNext, 1), 'yyyy-MM-dd');
-            } else {
-              // Default or attempt to parse frequency if it's like "X days"
-              // For now, simple monthly/yearly, or keep same as last payment as fallback.
-              // A more robust solution would parse various frequency strings.
-              newNextDueDate = format(addMonths(baseDateForNext, 1), 'yyyy-MM-dd'); // Default to monthly if unknown
-            }
-          } catch (e) {
-            console.error("Error calculating next due date during renewal:", e);
-            // Fallback: next due date will be same as last payment date if calculation fails
-            newNextDueDate = newLastPaymentDate;
-          }
+    
+    const subToRenew = subscriptions.find(s => s.id === subId);
 
-          toast({ title: 'Subscription Renewed', description: `${s.vendor} has been renewed. Next due date: ${newNextDueDate}.` });
-          return {
-            ...s,
-            last_payment_date: newLastPaymentDate,
-            next_due_date: newNextDueDate,
-            // Optionally, if renewal should also ensure it's active:
-            // status: 'active' as SubscriptionStatus, 
-          };
-        }
-        return s;
-      })
+    if (!subToRenew) {
+      toast({ title: 'Error', description: 'Subscription not found for renewal.', variant: 'destructive'});
+      setIsProcessingAction(false);
+      return;
+    }
+
+    const originalStatus = subToRenew.status;
+    const vendorName = subToRenew.vendor;
+    
+    const today = new Date();
+    const newLastPaymentDate = format(today, 'yyyy-MM-dd');
+    let newNextDueDate = newLastPaymentDate;
+          
+    try {
+      const baseDateForNext = parseISO(newLastPaymentDate); // Use newLastPaymentDate for parsing
+      if (subToRenew.frequency.toLowerCase() === 'monthly') {
+        newNextDueDate = format(addMonths(baseDateForNext, 1), 'yyyy-MM-dd');
+      } else if (subToRenew.frequency.toLowerCase() === 'yearly') {
+        newNextDueDate = format(addYears(baseDateForNext, 1), 'yyyy-MM-dd');
+      } else {
+        // Default or attempt to parse frequency if it's like "X days"
+        // For now, simple monthly/yearly, or keep same as last payment as fallback.
+        newNextDueDate = format(addMonths(baseDateForNext, 1), 'yyyy-MM-dd'); // Default to monthly if unknown
+      }
+    } catch (e) {
+      console.error("Error calculating next due date during renewal:", e);
+      // newNextDueDate remains newLastPaymentDate as fallback
+    }
+    
+    const newStatus: SubscriptionStatus = 'active';
+
+    setSubscriptions(subs => 
+      subs.map(s => 
+        s.id === subId 
+          ? { 
+              ...s, 
+              last_payment_date: newLastPaymentDate, 
+              next_due_date: newNextDueDate, 
+              status: newStatus 
+            } 
+          : s
+      )
     );
+
+    toast({ 
+      title: 'Subscription Renewed', 
+      description: `${vendorName} has been renewed and set to active. Next due date: ${formatDateSafe(newNextDueDate)}.` 
+    });
+
+    if (originalStatus === 'paused' && newStatus === 'active') {
+      const transaction: Transaction = {
+        id: `txn-status-renew-${Date.now()}`,
+        userId: MOCK_USER_ID,
+        type: 'status_change',
+        description: `Subscription ${vendorName} status changed to active upon renewal.`,
+        timestamp: new Date().toISOString(),
+        subscriptionId: subId,
+        relatedDetail: `Status of ${vendorName} set to active due to renewal.`
+      };
+      saveTransactionToStorage(transaction);
+      window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
+    }
+    
     setIsProcessingAction(false);
   };
 
@@ -197,7 +240,7 @@ export default function DashboardPage() {
         toast({ title: 'Status Update Error', description: "Subscription not found or failed to update.", variant: 'destructive' });
       } else {
         setSubscriptions(subs => subs.map(s => s.id === subId ? updatedSubscription : s));
-        window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
+        window.dispatchEvent(new CustomEvent('payright-transactions-updated')); // Already present, good.
         toast({ title: 'Status Updated', description: `${updatedSubscription.vendor} status set to ${newStatus}.` });
       }
     } catch (e: any) {
