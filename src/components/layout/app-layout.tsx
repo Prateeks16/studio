@@ -11,7 +11,8 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
-import { CircleDollarSign, UserCircle, LogOut, Settings } from 'lucide-react'; // Added Settings
+import SidebarWalletWidget from './sidebar-wallet-widget';
+import { CircleDollarSign, UserCircle, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useRouter } from 'next/navigation'; 
@@ -25,6 +26,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import type { Wallet } from '@/types';
+import { handleGetWalletAndTransactions, handleAddFunds } from '@/app/actions';
+import AddFundsModal from '@/components/dashboard/add-funds-modal';
+import { useToast } from "@/hooks/use-toast";
 
 type AppLayoutProps = {
   children: React.ReactNode;
@@ -33,6 +38,47 @@ type AppLayoutProps = {
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const router = useRouter(); 
+  const { toast } = useToast();
+
+  const [wallet, setWallet] = React.useState<Wallet | null>(null);
+  const [isWalletLoading, setIsWalletLoading] = React.useState(true);
+  const [isAddFundsModalOpen, setIsAddFundsModalOpen] = React.useState(false);
+  const [isAddingFunds, setIsAddingFunds] = React.useState(false);
+
+  const fetchWalletData = React.useCallback(async () => {
+    setIsWalletLoading(true);
+    const { wallet: fetchedWallet, error } = await handleGetWalletAndTransactions();
+    if (error) {
+      toast({ title: 'Error fetching wallet data', description: error, variant: 'destructive' });
+      setWallet(null);
+    } else {
+      setWallet(fetchedWallet || { userId: 'defaultUser', balance: 0 });
+    }
+    setIsWalletLoading(false);
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchWalletData();
+  }, [fetchWalletData]);
+
+  const onAddFundsSubmit = async (amount: number) => {
+    setIsAddingFunds(true);
+    const formData = new FormData();
+    formData.append('amount', amount.toString());
+    const result = await handleAddFunds(formData);
+    setIsAddingFunds(false);
+    if (result.error) {
+      toast({ title: 'Error Adding Funds', description: result.error, variant: 'destructive' });
+    } else if (result.wallet) {
+      setWallet(result.wallet);
+      // Re-fetch wallet data to ensure consistency if other components also display it
+      // or rely on more complex state updates from the server action.
+      // For now, just updating local state is fine for the sidebar widget.
+      await fetchWalletData(); // Ensures the balance is up-to-date after adding funds.
+      toast({ title: 'Funds Added', description: `Successfully added $${amount.toFixed(2)} to your wallet.` });
+      setIsAddFundsModalOpen(false);
+    }
+  };
 
   const handleLogout = () => {
     // In a real app, you would clear session/token here
@@ -52,6 +98,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </SidebarHeader>
         <SidebarContent>
           <SidebarNav />
+          <SidebarWalletWidget 
+            wallet={wallet} 
+            isLoading={isWalletLoading} 
+            onAddFundsClick={() => setIsAddFundsModalOpen(true)} 
+          />
         </SidebarContent>
         <SidebarFooter className="p-4 group-data-[collapsible=icon]:p-2">
           <Button variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center" onClick={handleLogout}>
@@ -101,7 +152,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
       </SidebarInset>
+      {isAddFundsModalOpen && (
+        <AddFundsModal
+          isOpen={isAddFundsModalOpen}
+          onClose={() => setIsAddFundsModalOpen(false)}
+          onAddFunds={onAddFundsSubmit}
+          isLoading={isAddingFunds}
+        />
+      )}
     </SidebarProvider>
   );
 }
-
