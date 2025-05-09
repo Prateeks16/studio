@@ -135,9 +135,14 @@ let memoryState: State = { toasts: [] }
 
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
-  listeners.forEach((listener) => {
-    listener(memoryState)
-  })
+  // Defer listener notifications to prevent "setState during render" errors.
+  // This ensures that components listening to toast state (like Toaster)
+  // are updated after the current React render cycle has completed.
+  setTimeout(() => {
+    listeners.forEach((listener) => {
+      listener(memoryState)
+    })
+  }, 0)
 }
 
 type Toast = Omit<ToasterToast, "id">
@@ -182,7 +187,7 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, []) // Changed [state] to []
+  }, []) // Empty dependency array is correct here
 
   return {
     ...state,
