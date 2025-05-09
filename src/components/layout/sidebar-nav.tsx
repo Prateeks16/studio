@@ -6,7 +6,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, Settings, Wallet, Lightbulb } from 'lucide-react'; // Added Wallet and Lightbulb
+import { LayoutDashboard, Settings, Wallet, Lightbulb, Bell } from 'lucide-react'; // Added Bell
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -14,6 +14,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/wallet', label: 'Wallet', icon: Wallet },
   { href: '/ai-suggestions', label: 'AI Suggestions', icon: Lightbulb },
+  { href: '/notifications', label: 'Notifications', icon: Bell }, // Added Notifications
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
