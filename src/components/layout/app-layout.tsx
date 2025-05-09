@@ -11,10 +11,10 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
-import { CircleDollarSign, UserCircle, LogOut } from 'lucide-react';
+import { CircleDollarSign, UserCircle, LogOut, Settings } from 'lucide-react'; // Added Settings
 import { Button } from '@/components/ui/button';
 import React from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import { useRouter } from 'next/navigation'; 
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -32,7 +32,7 @@ type AppLayoutProps = {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
-  const router = useRouter(); // Initialize useRouter
+  const router = useRouter(); 
 
   const handleLogout = () => {
     // In a real app, you would clear session/token here
