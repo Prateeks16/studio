@@ -3,12 +3,8 @@
 # dependencies
 /node_modules
 /.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+.pnp.js
+*.pnp.*
 
 # testing
 /coverage
@@ -23,12 +19,19 @@
 # misc
 .DS_Store
 *.pem
+*.seed
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+error.log
+repro.tar.gz
+
+# local env files
+.env*.local
+# .env # We want to commit .env for this project, so it's commented out or removed.
 
 # vercel
 .vercel
@@ -37,9 +40,16 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.genkit/*
-.env*
+# editor
+.vscode/
+*.swp
+*.swo
 
-# firebase
-firebase-debug.log
-firestore-debug.log
+# dotenv
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# turbo
+.turbo
