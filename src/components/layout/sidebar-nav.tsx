@@ -6,14 +6,15 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { LayoutDashboard, Settings, Info, LogIn, UserPlus } from 'lucide-react'; // Added LogIn and UserPlus for potential future use
+import { LayoutDashboard, Settings, Wallet, Lightbulb } from 'lucide-react'; // Added Wallet and Lightbulb
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/ai-suggestions', label: 'AI Suggestions', icon: Lightbulb },
   { href: '/settings', label: 'Settings', icon: Settings },
-  // { href: '/about', label: 'About', icon: Info }, // Example: can be re-added if needed
 ];
 
 export default function SidebarNav() {
@@ -25,7 +26,7 @@ export default function SidebarNav() {
         <SidebarMenuItem key={item.label}>
           <Link href={item.href} passHref legacyBehavior>
             <SidebarMenuButton
-              isActive={pathname === item.href || (item.href === "/dashboard" && pathname.startsWith("/dashboard")) || (item.href === "/settings" && pathname.startsWith("/settings"))}
+              isActive={pathname.startsWith(item.href)}
               tooltip={{ children: item.label, side: 'right', align: 'center' }}
               asChild={false} 
             >
