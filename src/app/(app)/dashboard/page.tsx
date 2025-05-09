@@ -5,15 +5,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import type { Subscription, Transaction, SubscriptionStatus } from '@/types';
+import type { Subscription, SubscriptionStatus } from '@/types'; // Transaction type removed
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
 import AlertsSection from '@/components/dashboard/alerts-section';
-import TransactionHistoryList from '@/components/dashboard/transaction-history-list';
+// TransactionHistoryList import removed
 import { 
   handleDetectCharges, 
 } from '@/app/actions';
 import { 
-  getTransactions as getTransactionsService,
+  // getTransactions as getTransactionsService, // Removed
   chargeForSubscription as chargeForSubscriptionService 
 } from '@/services/walletService';
 import { toggleSubscriptionStatus as toggleSubscriptionStatusService } from '@/services/subscriptionService';
@@ -29,23 +29,13 @@ export default function DashboardPage() {
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  // transactions state and setTransactions removed
 
-  const fetchTransactionData = async () => {
-    try {
-      const fetchedTransactions = await getTransactionsService(MOCK_USER_ID);
-      setTransactions(fetchedTransactions || []);
-    } catch (error: any) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to fetch transaction data.";
-      toast({ title: 'Error fetching transaction data', description: errorMessage, variant: 'destructive' });
-      setTransactions([]);
-    }
-  };
-
+  // fetchTransactionData function removed
 
   useEffect(() => {
     setIsLoading(true);
-    fetchTransactionData(); 
+    // fetchTransactionData call removed
 
     const storedSubscriptions = localStorage.getItem('payright-subscriptions');
     if (storedSubscriptions) {
@@ -73,7 +63,6 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!isLoading) { 
         localStorage.setItem('payright-subscriptions', JSON.stringify(subscriptions));
-        // Dispatch custom event whenever subscriptions are updated
         window.dispatchEvent(new CustomEvent('payright-subscriptions-updated'));
     }
   }, [subscriptions, isLoading]);
@@ -150,16 +139,22 @@ export default function DashboardPage() {
     try {
       const result = await chargeForSubscriptionService(MOCK_USER_ID, sub); 
       if (result.success) {
-        await fetchTransactionData(); 
+        // fetchTransactionData call removed, wallet page will update itself via event
+        window.dispatchEvent(new CustomEvent('payright-wallet-updated'));
+        window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
         toast({ title: 'Charge Successful', description: `${sub.vendor} charged. New balance: $${result.newBalance.toFixed(2)}` });
       } else {
-        await fetchTransactionData(); 
+        // fetchTransactionData call removed
+        window.dispatchEvent(new CustomEvent('payright-wallet-updated'));
+        window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
         toast({ title: 'Charge Failed', description: `Could not charge ${sub.vendor}. Insufficient funds.`, variant: 'destructive' });
       }
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred during charging.";
       toast({ title: 'Charging Error', description: errorMessage, variant: 'destructive' });
-      await fetchTransactionData(); 
+      // fetchTransactionData call removed
+      window.dispatchEvent(new CustomEvent('payright-wallet-updated'));
+      window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
     } finally {
       setIsProcessingAction(false);
     }
@@ -173,7 +168,8 @@ export default function DashboardPage() {
         toast({ title: 'Status Update Error', description: "Subscription not found or failed to update.", variant: 'destructive' });
       } else {
         setSubscriptions(subs => subs.map(s => s.id === subId ? updatedSubscription : s));
-        await fetchTransactionData(); 
+        // fetchTransactionData call removed
+        window.dispatchEvent(new CustomEvent('payright-transactions-updated'));
         toast({ title: 'Status Updated', description: `${updatedSubscription.vendor} status set to ${newStatus}.` });
       }
     } catch (e: any) {
@@ -212,7 +208,7 @@ export default function DashboardPage() {
       
       <AlertsSection subscriptions={subscriptions} />
 
-      <TransactionHistoryList transactions={transactions} />
+      {/* TransactionHistoryList component removed */}
 
       {subscriptions.length === 0 && !isLoading ? (
         <Card className="text-center py-12 shadow-md">
@@ -254,6 +250,7 @@ export default function DashboardPage() {
             onToggleSubscriptionStatus={onToggleSubscriptionStatus}
             isProcessingAction={isProcessingAction}
             isLoading={isLoading && subscriptions.length === 0} 
+            onToggleUnused={() => { /* Placeholder for onToggleUnused if needed elsewhere */ }}
             />
         )
       )}

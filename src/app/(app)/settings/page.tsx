@@ -1,6 +1,7 @@
 
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,9 +13,34 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
   const { toast } = useToast();
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      setIsDarkMode(true);
+    } else {
+      document.documentElement.classList.remove('dark');
+      setIsDarkMode(false);
+    }
+  }, []);
+
+  const handleThemeToggle = (checked: boolean) => {
+    setIsDarkMode(checked);
+    if (checked) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      toast({ title: "Theme Changed", description: "Dark mode enabled." });
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      toast({ title: "Theme Changed", description: "Light mode enabled." });
+    }
+  };
 
   const handleSaveChanges = () => {
-    // In a real app, you would save settings to a backend or localStorage
+    // In a real app, you would save other settings to a backend or localStorage
     toast({
       title: "Settings Saved",
       description: "Your preferences have been updated.",
@@ -108,13 +134,11 @@ export default function SettingsPage() {
                 Toggle between light and dark themes.
               </span>
             </Label>
-            <Switch id="darkMode" onCheckedChange={(checked) => {
-              if (checked) {
-                document.documentElement.classList.add('dark');
-              } else {
-                document.documentElement.classList.remove('dark');
-              }
-            }} />
+            <Switch 
+              id="darkMode" 
+              checked={isDarkMode}
+              onCheckedChange={handleThemeToggle} 
+            />
           </div>
         </CardContent>
       </Card>
@@ -137,7 +161,7 @@ export default function SettingsPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={handleSaveChanges} className="bg-accent hover:bg-accent/90 text-accent-foreground">Save Changes</Button>
+        <Button onClick={handleSaveChanges} className="bg-accent hover:bg-accent/90 text-accent-foreground">Save All Settings</Button>
       </div>
     </div>
   );
