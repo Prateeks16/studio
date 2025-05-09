@@ -8,40 +8,18 @@ import TransactionHistoryList from '@/components/dashboard/transaction-history-l
 import type { Wallet, Transaction } from '@/types';
 import { getWallet as getWalletService, getTransactions as getTransactionsService } from '@/services/walletService';
 import { useToast } from '@/hooks/use-toast';
-import { IndianRupee, Wallet as WalletIcon, Loader2, PlusCircle, Download } from 'lucide-react'; // Added Download icon
+import { IndianRupee, Wallet as WalletIcon, Loader2, PlusCircle, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { format, parseISO } from 'date-fns';
 
 const MOCK_USER_ID = 'defaultUser';
 const OPEN_ADD_FUNDS_MODAL_EVENT = 'payright-request-open-add-funds-modal';
 
-// Helper function to escape CSV cell content
-const escapeCsvCell = (cellData: string): string => {
-  if (cellData === null || cellData === undefined) {
-    return '';
-  }
-  const strCellData = String(cellData);
-  // If the cellData contains a comma, newline, or double quote, enclose it in double quotes.
-  // Also, any double quote within the cellData must be escaped by another double quote.
-  if (strCellData.includes(',') || strCellData.includes('"') || strCellData.includes('\n')) {
-    return `"${strCellData.replace(/"/g, '""')}"`;
-  }
-  return strCellData;
-};
-
-// Helper function to convert transactions to CSV string
-const convertTransactionsToCSV = (data: Transaction[]): string => {
-  const header = ['ID', 'Timestamp (UTC)', 'Type', 'Description', 'Amount', 'Currency', 'Subscription ID', 'Details'];
-  const rows = data.map(txn => [
-    txn.id,
-    txn.timestamp, // Using raw ISO string for better machine readability
-    txn.type,
-    escapeCsvCell(txn.description),
-    txn.amount !== undefined ? txn.amount.toString() : '',
-    'INR', // Assuming currency is always INR for this app
-    txn.subscriptionId || '',
-    escapeCsvCell(txn.relatedDetail || '')
-  ].join(','));
-  return [header.join(','), ...rows].join('\n');
-};
+// Extend jsPDF with autoTable, if using TypeScript and it's not automatically recognized
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+}
 
 
 export default function WalletPage() {
@@ -97,7 +75,7 @@ export default function WalletPage() {
     };
   }, [fetchWalletData, fetchTransactionData]);
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrencyDisplay = (amount: number) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   };
 
@@ -111,22 +89,61 @@ export default function WalletPage() {
       return;
     }
     try {
-      const csvData = convertTransactionsToCSV(transactions);
-      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'payright_transaction_history.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      toast({ title: 'Download Started', description: 'Your transaction history is downloading.' });
+      const doc = new jsPDF() as jsPDFWithAutoTable;
+
+      doc.setFontSize(18);
+      doc.text('PayRight Transaction History', 14, 22);
+      doc.setFontSize(11);
+      doc.setTextColor(100); // A grayish color for subtitle
+      doc.text(`Report generated on: ${format(new Date(), 'yyyy-MM-dd HH:mm:ss')}`, 14, 29);
+
+      const tableColumn = ['ID', 'Date', 'Type', 'Description', 'Amount (INR)', 'Details'];
+      const tableRows: (string | number | undefined)[][] = [];
+
+      transactions.forEach(txn => {
+        const transactionData = [
+          txn.id,
+          format(parseISO(txn.timestamp), 'yyyy-MM-dd HH:mm'),
+          txn.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()), // Format type string
+          txn.description,
+          txn.amount !== undefined ? txn.amount.toFixed(2) : 'N/A',
+          txn.relatedDetail || '',
+        ];
+        tableRows.push(transactionData);
+      });
+
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 35,
+        theme: 'striped', // or 'grid', 'plain'
+        headStyles: { 
+          fillColor: [33, 141, 170], // Using --primary HSL: 190 70% 35% -> RGB approx
+          textColor: [255, 255, 255] 
+        }, 
+        styles: { fontSize: 8, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 30 }, // ID
+          1: { cellWidth: 30 }, // Date
+          2: { cellWidth: 25 }, // Type
+          3: { cellWidth: 'auto' },// Description
+          4: { cellWidth: 25, halign: 'right' }, // Amount
+          5: { cellWidth: 'auto' },// Details
+        },
+        didDrawPage: function (data) {
+            // Footer
+            const pageCount = doc.getNumberOfPages();
+            doc.setFontSize(8);
+            doc.text('Page ' + String(data.pageNumber) + ' of ' + String(pageCount), data.settings.margin.left, doc.internal.pageSize.height - 10);
+        }
+      });
+
+      doc.save('payright_transaction_history.pdf');
+
+      toast({ title: 'Download Started', description: 'Your transaction history PDF is downloading.' });
     } catch (error) {
-      console.error("Error generating or downloading CSV:", error);
-      toast({ title: 'Download Failed', description: 'Could not download transaction history.', variant: 'destructive' });
+      console.error("Error generating or downloading PDF:", error);
+      toast({ title: 'Download Failed', description: 'Could not download transaction history as PDF.', variant: 'destructive' });
     }
   };
 
@@ -148,7 +165,7 @@ export default function WalletPage() {
                 disabled={transactions.length === 0 || isLoadingTransactions}
                 className="w-full sm:w-auto"
             >
-              <Download className="mr-2 h-4 w-4" /> Download History
+              <Download className="mr-2 h-4 w-4" /> Download History (PDF)
             </Button>
           </div>
         </CardHeader>
@@ -163,7 +180,7 @@ export default function WalletPage() {
             ) : (
               <div className="flex items-baseline space-x-2">
                 <p className="text-4xl font-bold text-primary">
-                  {wallet ? formatCurrency(wallet.balance) : formatCurrency(0)}
+                  {wallet ? formatCurrencyDisplay(wallet.balance) : formatCurrencyDisplay(0)}
                 </p>
                 <p className="text-sm text-muted-foreground">Current Balance</p>
               </div>
