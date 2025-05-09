@@ -11,7 +11,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
-import { CircleDollarSign, LogOut, Settings, Wallet as WalletIcon, User, IndianRupee, Moon, Sun } from 'lucide-react'; // Added IndianRupee, Moon, Sun
+import { CircleDollarSign, LogOut, Settings, Wallet as WalletIcon, User, IndianRupee, Moon, Sun, Maximize, Minimize } from 'lucide-react'; // Added Maximize, Minimize
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useRouter } from 'next/navigation'; 
@@ -49,6 +49,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [isAddFundsModalOpen, setIsAddFundsModalOpen] = React.useState(false);
   const [isAddingFunds, setIsAddingFunds] = React.useState(false);
   const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const [isFullScreen, setIsFullScreen] = React.useState(false);
 
   React.useEffect(() => {
     const storedTheme = localStorage.getItem('theme');
@@ -59,7 +60,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       document.documentElement.classList.remove('dark');
       setIsDarkMode(false);
     }
-    // Listen for theme changes from other sources (e.g., settings page)
+    
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'theme') {
         if (event.newValue === 'dark') {
@@ -77,6 +78,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
     };
   }, []);
 
+  React.useEffect(() => {
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullScreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullScreenChange);
+    };
+  }, []);
+
+
   const handleThemeToggle = () => {
     const newIsDarkMode = !isDarkMode;
     setIsDarkMode(newIsDarkMode);
@@ -89,8 +101,29 @@ export default function AppLayout({ children }: AppLayoutProps) {
       localStorage.setItem('theme', 'light');
       toast({ title: "Theme Changed", description: "Light mode enabled." });
     }
-     // Dispatch a custom event so other components (like settings page) can react if needed
     window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newIsDarkMode ? 'dark' : 'light' } }));
+  };
+
+  const handleToggleFullScreen = async () => {
+    if (!document.fullscreenElement) {
+      try {
+        await document.documentElement.requestFullscreen();
+        // setIsFullScreen(true); // State will be updated by event listener
+      } catch (err: any) {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        toast({ title: "Fullscreen Error", description: "Could not enter full-screen mode.", variant: "destructive"});
+      }
+    } else {
+      if (document.exitFullscreen) {
+        try {
+          await document.exitFullscreen();
+          // setIsFullScreen(false); // State will be updated by event listener
+        } catch (err: any) {
+          console.error(`Error attempting to exit full-screen mode: ${err.message} (${err.name})`);
+           toast({ title: "Fullscreen Error", description: "Could not exit full-screen mode.", variant: "destructive"});
+        }
+      }
+    }
   };
 
 
@@ -163,7 +196,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     localStorage.removeItem('payright-subscriptions');
     localStorage.removeItem('payright-wallets');
     localStorage.removeItem('payright-transactions');
-    localStorage.removeItem('theme'); // Clear theme on logout
+    localStorage.removeItem('theme'); 
     router.push('/login');
   };
 
@@ -212,6 +245,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <SidebarTrigger className="md:hidden" />
           <div className="flex-1">
           </div>
+          <Button variant="ghost" size="icon" onClick={handleToggleFullScreen} aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"} className="mr-2">
+            {isFullScreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
+          </Button>
           <Button variant="ghost" size="icon" onClick={handleThemeToggle} aria-label="Toggle theme" className="mr-2">
             {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
@@ -258,3 +294,4 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </SidebarProvider>
   );
 }
+
