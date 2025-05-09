@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   name: 'suggestSubscriptionAlternativesPrompt',
   input: {schema: SuggestSubscriptionAlternativesInputSchema},
   output: {schema: SuggestSubscriptionAlternativesOutputSchema},
-  prompt: `You are a personal finance advisor. A user has a subscription to {{{subscriptionName}}} that costs ${'{{{currentCost}}}'} and needs it for {{{userNeeds}}}. Suggest some free or cheaper alternatives. Explain your reasoning for each suggestion. Return the suggestions in the requested JSON schema.`,
+  prompt: `You are a personal finance advisor. A user has a subscription to "{{{subscriptionName}}}" that currently costs {{{currentCost}}} and primarily uses it for "{{{userNeeds}}}". Please suggest some free or cheaper alternatives. For each alternative, explain your reasoning. Ensure your output is a JSON object matching the specified schema.`,
 });
 
 const suggestSubscriptionAlternativesFlow = ai.defineFlow(
