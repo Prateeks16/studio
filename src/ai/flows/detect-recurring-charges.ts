@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -62,6 +63,9 @@ const detectRecurringChargesFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('AI model failed to generate valid recurring charges output or the output was null.');
+    }
+    return output;
   }
 );

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -55,6 +56,10 @@ const suggestSubscriptionAlternativesFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('AI model failed to generate valid subscription alternatives or the output was null.');
+    }
+    return output;
   }
 );
+
