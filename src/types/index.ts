@@ -18,6 +18,7 @@ export interface Subscription {
   alternatives?: string[];
   alternativesReasoning?: string;
   status: SubscriptionStatus; // New field for active/paused
+  category?: 'Entertainment' | 'Utilities' | 'SaaS' | 'Productivity' | 'Finance' | 'Health & Wellness' | 'Shopping' | 'Education' | 'Other'; // Added for analytics
 }
 
 export interface Wallet {
@@ -44,3 +45,4 @@ export type {
   DetectRecurringChargesOutput,
   SuggestSubscriptionAlternativesOutput
 };
+

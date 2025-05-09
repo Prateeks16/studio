@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Detects recurring charges from bank data using GenAI, including vendor, amount, frequency, last payment date, estimated next due date, and usage count.
+ * @fileOverview Detects recurring charges from bank data using GenAI, including vendor, amount, frequency, last payment date, estimated next due date, usage count, and category.
  *
  * - detectRecurringCharges - A function that analyzes bank data to identify recurring charges.
  * - DetectRecurringChargesInput - The input type for the detectRecurringCharges function.
@@ -18,6 +18,8 @@ const DetectRecurringChargesInputSchema = z.object({
 });
 export type DetectRecurringChargesInput = z.infer<typeof DetectRecurringChargesInputSchema>;
 
+const SubscriptionCategorySchema = z.enum(['Entertainment', 'Utilities', 'SaaS', 'Productivity', 'Finance', 'Health & Wellness', 'Shopping', 'Education', 'Other']);
+
 const DetectRecurringChargesOutputSchema = z.array(
   z.object({
     vendor: z.string().describe('The name of the subscription vendor (e.g., Netflix, Spotify).'),
@@ -26,6 +28,7 @@ const DetectRecurringChargesOutputSchema = z.array(
     last_payment_date: z.string().describe('The date of the last payment (YYYY-MM-DD).'),
     next_due_date: z.string().describe('The estimated next due date (YYYY-MM-DD).'),
     usage_count: z.number().optional().describe('A mock or simulated usage count. 0 indicates potentially unused.'),
+    category: SubscriptionCategorySchema.describe('The category of the subscription (e.g., Entertainment, Utilities, SaaS, Productivity, Finance, Health & Wellness, Shopping, Education, Other). Assign "Other" if unsure or it doesn\'t fit well.'),
   })
 );
 export type DetectRecurringChargesOutput = z.infer<typeof DetectRecurringChargesOutputSchema>;
@@ -46,6 +49,7 @@ For each detected subscription, return a JSON array of objects, where each objec
 - last_payment_date: The date of the last recorded payment for this subscription from the provided data (format YYYY-MM-DD). If multiple payments for the same vendor, use the latest one.
 - next_due_date: Estimate the next due date based on the last_payment_date and frequency (format YYYY-MM-DD).
 - usage_count: (Optional) Provide a mock or simulated usage count for this subscription. If the subscription appears unused or based on hints in the data (like "UnusedGym"), set this to 0. Otherwise, provide a small positive integer (e.g., 1 to 5).
+- category: Classify the subscription into one of the following categories: Entertainment, Utilities, SaaS, Productivity, Finance, Health & Wellness, Shopping, Education, Other. If unsure or it doesn't fit well, use "Other".
 
 Flag subscriptions that may be unused or underutilized by setting usage_count to 0.
 
@@ -89,3 +93,4 @@ const detectRecurringChargesFlow = ai.defineFlow(
     }
   }
 );
+

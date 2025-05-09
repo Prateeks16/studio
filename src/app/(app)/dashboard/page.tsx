@@ -5,10 +5,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import type { Subscription, SubscriptionStatus, Transaction } from '@/types';
+import type { Subscription, SubscriptionStatus, Transaction, SubscriptionCategory } from '@/types';
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
 import AlertsSection from '@/components/dashboard/alerts-section';
-import MonthlyExpenditureAnalytics from '@/components/dashboard/monthly-expenditure-analytics'; // New Import
+// MonthlyExpenditureAnalytics import removed
 import { 
   handleDetectCharges, 
 } from '@/app/actions';
@@ -37,9 +37,14 @@ export default function DashboardPage() {
     if (storedSubscriptions) {
       try {
         const parsedSubs = JSON.parse(storedSubscriptions) as Subscription[];
-        const subsWithStatus = parsedSubs.map(sub => ({ ...sub, status: sub.status || 'active' }));
-        if (Array.isArray(subsWithStatus) && (subsWithStatus.length === 0 || (subsWithStatus.length > 0 && 'vendor' in subsWithStatus[0]))) {
-            setSubscriptions(subsWithStatus);
+        const subsWithStatusAndCategory = parsedSubs.map(sub => ({ 
+            ...sub, 
+            status: sub.status || 'active',
+            category: sub.category || 'Other' as SubscriptionCategory // Ensure category exists
+        }));
+
+        if (Array.isArray(subsWithStatusAndCategory) && (subsWithStatusAndCategory.length === 0 || (subsWithStatusAndCategory.length > 0 && 'vendor' in subsWithStatusAndCategory[0]))) {
+            setSubscriptions(subsWithStatusAndCategory);
         } else {
             localStorage.removeItem('payright-subscriptions'); 
             setSubscriptions([]);
@@ -80,7 +85,8 @@ export default function DashboardPage() {
           ...charge, 
           id: `sub-${Date.now()}-${index}`, 
           isUnused: charge.usage_count === 0, 
-          status: 'active' as SubscriptionStatus, 
+          status: 'active' as SubscriptionStatus,
+          category: charge.category || 'Other' as SubscriptionCategory, // Ensure category is mapped
         }));
         setSubscriptions(newSubs); 
         toast({ title: 'Charges Detected', description: `${newSubs.length} potential subscriptions found.` });
@@ -277,10 +283,7 @@ export default function DashboardPage() {
       
       <AlertsSection subscriptions={subscriptions} />
 
-      {/* Analytics Section */}
-      {subscriptions.length > 0 && !isLoading && (
-        <MonthlyExpenditureAnalytics subscriptions={subscriptions} />
-      )}
+      {/* Analytics Section Removed from here */}
 
 
       {subscriptions.length === 0 && !isLoading ? (
