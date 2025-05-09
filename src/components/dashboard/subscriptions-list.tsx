@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Lightbulb, Trash2, MoreVertical, Loader2, AlertCircle, PlayCircle, PauseCircle, DollarSign } from 'lucide-react';
+import { Trash2, MoreVertical, Loader2, AlertCircle, PlayCircle, PauseCircle, DollarSign } from 'lucide-react'; // Lightbulb icon removed
 import { format, parseISO, isValid } from 'date-fns';
 import {
   DropdownMenu,
@@ -20,8 +20,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 type SubscriptionsListProps = {
   subscriptions: Subscription[];
-  onSuggestAlternatives: (subscription: Subscription) => void;
-  onToggleUnused: (subscriptionId: string) => void; // Keep for now or phase out
+  // onSuggestAlternatives: (subscription: Subscription) => void; // Removed prop
+  onToggleUnused: (subscriptionId: string) => void; 
   onDeleteSubscription: (subscriptionId: string) => void;
   onChargeSubscription: (subscription: Subscription) => void;
   onToggleSubscriptionStatus: (subscriptionId: string, newStatus: SubscriptionStatus) => void;
@@ -31,7 +31,7 @@ type SubscriptionsListProps = {
 
 export default function SubscriptionsList({
   subscriptions,
-  onSuggestAlternatives,
+  // onSuggestAlternatives, // Prop removed
   onToggleUnused,
   onDeleteSubscription,
   onChargeSubscription,
@@ -148,9 +148,10 @@ export default function SubscriptionsList({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onSuggestAlternatives(sub)} disabled={isProcessingAction}>
+                        {/* "Find Alternatives" DropdownMenuItem removed */}
+                        {/* <DropdownMenuItem onClick={() => onSuggestAlternatives(sub)} disabled={isProcessingAction}>
                           <Lightbulb className="mr-2 h-4 w-4" /> Find Alternatives
-                        </DropdownMenuItem>
+                        </DropdownMenuItem> */}
                         
                         {sub.status === 'active' && (
                           <DropdownMenuItem onClick={() => onChargeSubscription(sub)} disabled={isProcessingAction}>

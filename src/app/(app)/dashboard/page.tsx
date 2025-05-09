@@ -7,13 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import type { Subscription, Transaction, SubscriptionStatus } from '@/types';
 import SubscriptionsList from '@/components/dashboard/subscriptions-list';
-import AlternativeSuggestionModal from '@/components/dashboard/alternative-suggestion-modal';
+// AlternativeSuggestionModal is removed as its functionality moves to a sidebar widget
+// import AlternativeSuggestionModal from '@/components/dashboard/alternative-suggestion-modal';
 import AlertsSection from '@/components/dashboard/alerts-section';
 import TransactionHistoryList from '@/components/dashboard/transaction-history-list';
 // Import AI-related actions
 import { 
   handleDetectCharges, 
-  handleSuggestAlternatives,
+  // handleSuggestAlternatives is no longer called from here
 } from '@/app/actions';
 // Import client-side services directly
 import { 
@@ -34,15 +35,14 @@ export default function DashboardPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
-  const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
-  const [isSuggestingAlternatives, setIsSuggestingAlternatives] = useState(false);
+  // State related to AlternativeSuggestionModal is removed
+  // const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
+  // const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+  // const [isSuggestingAlternatives, setIsSuggestingAlternatives] = useState(false);
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const fetchTransactionData = async () => {
-    // Wallet balance is displayed by AppLayout's SidebarWalletWidget
-    // We only need transactions for the TransactionHistoryList on the dashboard
     try {
       const fetchedTransactions = await getTransactionsService(MOCK_USER_ID);
       setTransactions(fetchedTransactions || []);
@@ -114,40 +114,8 @@ export default function DashboardPage() {
     }
   };
 
-  const onSuggestAlternatives = async (subId: string) => {
-    const subToUpdate = subscriptions.find(s => s.id === subId);
-    if (!subToUpdate) {
-        toast({ title: 'Error', description: 'Subscription not found.', variant: 'destructive' });
-        return;
-    }
-    
-    setIsSuggestingAlternatives(true);
-    try {
-      const result = await handleSuggestAlternatives({ // AI action call
-        subscriptionName: subToUpdate.vendor, 
-        currentCost: subToUpdate.amount 
-      });
-
-      if ('error' in result) {
-        toast({ title: 'Error Suggesting Alternatives', description: result.error, variant: 'destructive' });
-      } else {
-        const updatedSubscriptionWithAlternatives = { 
-          ...subToUpdate, 
-          alternatives: result.alternatives, 
-          alternativesReasoning: result.reasoning 
-        };
-        setSubscriptions(subs => subs.map(s => s.id === subId ? updatedSubscriptionWithAlternatives : s));
-        setSelectedSubscription(updatedSubscriptionWithAlternatives); // For modal display
-        toast({ title: 'Alternatives Found', description: `Alternatives for ${subToUpdate.vendor} suggested.` });
-      }
-    } catch (e) {
-      console.error("Exception in onSuggestAlternatives:", e);
-      const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred.";
-      toast({ title: 'Error Suggesting Alternatives', description: errorMessage, variant: 'destructive' });
-    } finally {
-      setIsSuggestingAlternatives(false);
-    }
-  };
+  // onSuggestAlternatives function and handleOpenSuggestModal are removed
+  // The logic for suggesting alternatives will now reside in the SidebarAiSuggestionWidget
 
   const handleToggleUnused = (subId: string) => { 
     setSubscriptions(subs => 
@@ -159,11 +127,6 @@ export default function DashboardPage() {
     );
   };
   
-  const handleOpenSuggestModal = (sub: Subscription) => {
-    setSelectedSubscription(sub);
-    setIsSuggestModalOpen(true);
-  };
-
   const handleDeleteSubscription = (subId: string) => {
     setSubscriptions(subs => subs.filter(s => s.id !== subId));
     toast({ title: 'Subscription Removed', description: 'The subscription has been removed from your list.' });
@@ -203,7 +166,6 @@ export default function DashboardPage() {
       const result = await chargeForSubscriptionService(MOCK_USER_ID, sub); // Direct service call
       if (result.success) {
         await fetchTransactionData(); // Refresh local transactions
-        // AppLayout's wallet will be updated on its next fetch triggered by its own actions or page reload.
         toast({ title: 'Charge Successful', description: `${sub.vendor} charged. New balance: $${result.newBalance.toFixed(2)}` });
       } else {
         await fetchTransactionData(); // Refresh transactions to show failed attempt
@@ -302,7 +264,7 @@ export default function DashboardPage() {
         ) : (
             <SubscriptionsList
             subscriptions={subscriptions}
-            onSuggestAlternatives={handleOpenSuggestModal}
+            // onSuggestAlternatives prop is removed
             onToggleUnused={handleToggleUnused} 
             onDeleteSubscription={handleDeleteSubscription}
             onChargeSubscription={onChargeSubscription}
@@ -313,7 +275,8 @@ export default function DashboardPage() {
         )
       )}
 
-      {selectedSubscription && isSuggestModalOpen && (
+      {/* AlternativeSuggestionModal is removed */}
+      {/* {selectedSubscription && isSuggestModalOpen && (
         <AlternativeSuggestionModal
           isOpen={isSuggestModalOpen}
           onClose={() => { setIsSuggestModalOpen(false); setSelectedSubscription(null); }}
@@ -321,7 +284,7 @@ export default function DashboardPage() {
           onSuggest={onSuggestAlternatives} 
           isLoading={isSuggestingAlternatives}
         />
-      )}
+      )} */}
     </div>
   );
 }

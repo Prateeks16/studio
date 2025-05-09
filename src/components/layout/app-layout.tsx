@@ -12,7 +12,8 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
 import SidebarWalletWidget from './sidebar-wallet-widget';
-import { CircleDollarSign, LogOut, Settings } from 'lucide-react'; // UserCircle removed as avatar is directly used
+import SidebarAiSuggestionWidget from './sidebar-ai-suggestion-widget'; // Import the new widget
+import { CircleDollarSign, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useRouter } from 'next/navigation'; 
@@ -27,9 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Wallet } from '@/types';
-// Import client-side services directly
 import { getWallet as getWalletService, addFunds as addFundsService } from '@/services/walletService';
-// handleGetWalletAndTransactions and handleAddFunds from actions.ts are removed
 import AddFundsModal from '@/components/dashboard/add-funds-modal';
 import { useToast } from "@/hooks/use-toast";
 
@@ -61,7 +60,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     } finally {
       setIsWalletLoading(false);
     }
-  }, [toast]); // MOCK_USER_ID is a constant, so not needed in deps array.
+  }, [toast]);
 
   React.useEffect(() => {
     fetchWalletData();
@@ -70,8 +69,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const onAddFundsSubmit = async (amount: number) => {
     setIsAddingFunds(true);
     try {
-      await addFundsService(MOCK_USER_ID, amount); // Call client-side service
-      await fetchWalletData(); // Re-fetch wallet data to update UI
+      await addFundsService(MOCK_USER_ID, amount); 
+      await fetchWalletData(); 
       toast({ title: 'Funds Added', description: `Successfully added $${amount.toFixed(2)} to your wallet.` });
       setIsAddFundsModalOpen(false);
     } catch (e: any) {
@@ -104,6 +103,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             isLoading={isWalletLoading} 
             onAddFundsClick={() => setIsAddFundsModalOpen(true)} 
           />
+          <SidebarAiSuggestionWidget /> {/* Add the new widget here */}
         </SidebarContent>
         <SidebarFooter className="p-4 group-data-[collapsible=icon]:p-2">
           <Button variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center" onClick={handleLogout}>
@@ -164,4 +164,3 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </SidebarProvider>
   );
 }
-
