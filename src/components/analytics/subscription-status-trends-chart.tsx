@@ -16,11 +16,11 @@ type SubscriptionStatusTrendsChartProps = {
 const chartConfig = {
   activations: {
     label: 'Activations',
-    color: 'hsl(var(--chart-2))', // Greenish
+    color: 'hsl(var(--chart-2))', 
   },
   pauses: {
     label: 'Pauses',
-    color: 'hsl(var(--chart-5))', // Reddish/Orangish
+    color: 'hsl(var(--chart-5))', 
   },
 } satisfies ChartConfig;
 
@@ -46,21 +46,20 @@ const SubscriptionStatusTrendsChart: React.FC<SubscriptionStatusTrendsChartProps
 
   const chartData = Object.values(trendsData).sort((a, b) => a.month.localeCompare(b.month));
 
-  // Limit to last 6-12 months for better readability if there's a lot of data
   const displayData = chartData.slice(-12);
 
 
   if (displayData.length === 0) {
     return (
-      <Card className="shadow-lg">
+      <Card className="shadow-lg border border-border/50">
         <CardHeader>
           <div className="flex items-center">
             <Activity className="h-6 w-6 text-primary mr-3" />
-            <CardTitle className="text-xl font-semibold">Subscription Status Trends</CardTitle>
+            <CardTitle className="text-xl font-semibold">Subscription Activity Over Time</CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No subscription status changes recorded to display trends.</p>
+        <CardContent className="flex items-center justify-center h-48">
+          <p className="text-muted-foreground text-center">No subscription status changes recorded to display trends.</p>
         </CardContent>
       </Card>
     );
@@ -75,14 +74,14 @@ const SubscriptionStatusTrendsChart: React.FC<SubscriptionStatusTrendsChartProps
   }
 
   return (
-    <Card className="shadow-lg">
+    <Card className="shadow-lg border border-border/50">
       <CardHeader>
         <div className="flex items-center">
           <Activity className="h-6 w-6 text-primary mr-3" />
-          <CardTitle className="text-xl font-semibold">Subscription Activity Trends</CardTitle>
+          <CardTitle className="text-xl font-semibold">Subscription Activity Over Time</CardTitle>
         </div>
-        <CardDescription>
-          Monthly count of subscription activations and pauses based on status changes.
+        <CardDescription className="mt-1">
+          Track the monthly trends of subscription activations and pauses to understand your subscription lifecycle. This chart shows changes based on recorded transactions.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -98,7 +97,7 @@ const SubscriptionStatusTrendsChart: React.FC<SubscriptionStatusTrendsChartProps
               <YAxis 
                 allowDecimals={false} 
                 tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                label={{ value: 'Count', angle: -90, position: 'insideLeft', offset:0, style: { textAnchor: 'middle', fontSize: '12px', fill: 'hsl(var(--foreground))' } }}
+                label={{ value: 'Count of Changes', angle: -90, position: 'insideLeft', offset:0, style: { textAnchor: 'middle', fontSize: '12px', fill: 'hsl(var(--foreground))' } }}
               />
               <ChartTooltip
                 cursor={{ fill: 'hsl(var(--secondary))' }}

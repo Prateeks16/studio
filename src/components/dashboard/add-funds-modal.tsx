@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Loader2, DollarSign, CreditCard, Landmark, Smartphone } from 'lucide-react';
+import { Loader2, IndianRupee, CreditCard, Landmark, Smartphone } from 'lucide-react'; // Replaced DollarSign with IndianRupee
 
 type AddFundsModalProps = {
   isOpen: boolean;
@@ -37,13 +37,22 @@ export default function AddFundsModal({ isOpen, onClose, onAddFunds, isLoading }
     event.preventDefault();
     const numericAmount = parseFloat(amount);
     if (!isNaN(numericAmount) && numericAmount > 0) {
-      // In a real scenario, selectedPaymentMethod would be used here.
       await onAddFunds(numericAmount);
       setAmount(''); 
     } else {
+      // Consider using toast for better UX
       alert("Please enter a valid positive amount.");
     }
   };
+  
+  const formatCurrencyForDisplay = (value: string) => {
+    const numericValue = parseFloat(value);
+    if (isNaN(numericValue) || numericValue <= 0) {
+      return 'Funds';
+    }
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(numericValue);
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -58,16 +67,16 @@ export default function AddFundsModal({ isOpen, onClose, onAddFunds, isLoading }
           <div className="grid gap-6 py-6">
             <div className="space-y-2">
               <Label htmlFor="amount">
-                Amount (USD)
+                Amount (INR)
               </Label>
               <div className="relative">
-                 <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                 <IndianRupee className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="amount"
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="e.g., 50.00"
+                  placeholder="e.g., 1000.00"
                   className="pl-8 text-lg"
                   required
                   min="0.01"
@@ -153,9 +162,9 @@ export default function AddFundsModal({ isOpen, onClose, onAddFunds, isLoading }
             <Button variant="outline" onClick={onClose} type="button" disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || !amount} className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DollarSign className="mr-2 h-4 w-4" />}
-              Add {amount ? `$${parseFloat(amount).toFixed(2)}` : 'Funds'}
+            <Button type="submit" disabled={isLoading || !amount || parseFloat(amount) <= 0} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <IndianRupee className="mr-2 h-4 w-4" />}
+              Add {formatCurrencyForDisplay(amount)}
             </Button>
           </DialogFooter>
         </form>
@@ -163,4 +172,3 @@ export default function AddFundsModal({ isOpen, onClose, onAddFunds, isLoading }
     </Dialog>
   );
 }
-

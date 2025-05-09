@@ -5,16 +5,20 @@ import React from 'react';
 import type { Subscription } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from 'recharts'; // Tooltip import removed as not directly used here anymore
-import { DollarSign, TrendingUp } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from 'recharts';
+import { IndianRupee, TrendingUp } from 'lucide-react'; // Changed DollarSign to IndianRupee
 
 type TotalMonthlySpendChartProps = {
   subscriptions: Subscription[];
 };
 
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+};
+
 const chartConfig = {
   normalizedMonthlyCost: {
-    label: 'Monthly Cost (USD)',
+    label: 'Monthly Cost (INR)',
     color: 'hsl(var(--chart-1))',
   },
 } satisfies ChartConfig;
@@ -34,8 +38,6 @@ const TotalMonthlySpendChart: React.FC<TotalMonthlySpendChartProps> = ({ subscri
     if (frequency === 'yearly') {
       return amount / 12;
     }
-    // For simplicity in this chart, other frequencies will contribute 0 to total monthly cost.
-    // A more complex app might normalize daily, weekly, quarterly, etc.
     return 0; 
   };
   
@@ -53,73 +55,73 @@ const TotalMonthlySpendChart: React.FC<TotalMonthlySpendChartProps> = ({ subscri
 
   if (activeSubscriptions.length === 0) {
     return (
-      <Card className="shadow-lg">
+      <Card className="shadow-lg border border-border/50">
         <CardHeader>
           <div className="flex items-center">
             <TrendingUp className="h-6 w-6 text-primary mr-3" />
-            <CardTitle className="text-xl font-semibold">Total Monthly Spend</CardTitle>
+            <CardTitle className="text-xl font-semibold">Monthly Subscription Expenditure</CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No active subscriptions to analyze for monthly spend.</p>
+        <CardContent className="flex items-center justify-center h-48">
+          <p className="text-muted-foreground text-center">No active subscriptions with monthly or yearly frequency to analyze for spend.</p>
         </CardContent>
       </Card>
     );
   }
   
-  const formatCurrencyForAxis = (tickItem: number) => `$${tickItem.toFixed(0)}`;
+  const formatCurrencyForAxis = (tickItem: number) => `₹${tickItem.toFixed(0)}`;
 
   return (
-    <Card className="shadow-lg h-full flex flex-col">
+    <Card className="shadow-lg h-full flex flex-col border border-border/50">
       <CardHeader>
         <div className="flex items-center justify-between">
             <div className="flex items-center">
                 <TrendingUp className="h-6 w-6 text-primary mr-3" />
-                <CardTitle className="text-xl font-semibold">Monthly Spend Breakdown</CardTitle>
+                <CardTitle className="text-xl font-semibold">Monthly Subscription Expenditure</CardTitle>
             </div>
             <div className="flex items-center text-right">
-                 <DollarSign className="h-7 w-7 text-green-500 mr-1" />
+                 <IndianRupee className="h-7 w-7 text-green-500 mr-1" />
                  <div>
                     <p className="text-2xl font-bold text-green-600">
-                        ${totalMonthlyExpenditure.toFixed(2)}
+                        {formatCurrency(totalMonthlyExpenditure)}
                     </p>
                     <p className="text-xs text-muted-foreground">Total Est. Monthly</p>
                  </div>
             </div>
         </div>
-        <CardDescription>
-          Estimated monthly cost for each active subscription (yearly subscriptions are amortized).
+        <CardDescription className="mt-1">
+          Detailed breakdown of estimated monthly costs for your active subscriptions. Yearly subscriptions are amortized to reflect monthly figures.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow"> {/* Ensure content takes available space */}
+      <CardContent className="flex-grow">
         {chartData.length > 0 ? (
           <ChartContainer config={chartConfig} className="min-h-[300px] w-full aspect-auto sm:aspect-[2/1] lg:aspect-[3/1] h-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 70 }}> {/* Increased bottom margin */}
+              <BarChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 70 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis 
                     dataKey="name" 
                     angle={-45} 
                     textAnchor="end" 
-                    height={80} // Increased height for angled labels
+                    height={80} 
                     interval={0}
                     tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                 />
                 <YAxis 
                     tickFormatter={formatCurrencyForAxis}
                     tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                    label={{ value: 'Norm. Monthly Cost (USD)', angle: -90, position: 'insideLeft', offset: 10, style: { textAnchor: 'middle', fontSize: '12px', fill: 'hsl(var(--foreground))' } }}
+                    label={{ value: 'Normalized Monthly Cost (INR)', angle: -90, position: 'insideLeft', offset: 10, style: { textAnchor: 'middle', fontSize: '12px', fill: 'hsl(var(--foreground))' } }}
                 />
                 <ChartTooltip
                     cursor={{ fill: 'hsl(var(--secondary))' }}
                     content={<ChartTooltipContent 
-                        formatter={(value) => `$${Number(value).toFixed(2)}`} 
+                        formatter={(value) => formatCurrency(Number(value))} 
                         nameKey="name" 
                         labelKey="name" 
                     />}
                 />
                 <Legend 
-                  payload={[{ value: 'Monthly Cost (USD)', type: 'square', id: 'ID01', color: 'hsl(var(--chart-1))' }]}
+                  payload={[{ value: 'Monthly Cost (INR)', type: 'square', id: 'ID01', color: 'hsl(var(--chart-1))' }]}
                   wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} 
                   verticalAlign="top" 
                   align="right"
@@ -129,9 +131,11 @@ const TotalMonthlySpendChart: React.FC<TotalMonthlySpendChartProps> = ({ subscri
             </ResponsiveContainer>
           </ChartContainer>
         ) : (
-          <p className="text-muted-foreground text-center py-8">
-            No subscriptions with 'monthly' or 'yearly' frequency found to display in the chart.
-          </p>
+          <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground text-center py-8">
+                No subscriptions with 'monthly' or 'yearly' frequency found to display in the chart.
+            </p>
+          </div>
         )}
          <p className="text-xs text-muted-foreground mt-4 text-center">
             * Chart displays subscriptions with 'monthly' or 'yearly' frequency, normalized to a monthly cost.

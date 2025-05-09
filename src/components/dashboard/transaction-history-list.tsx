@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { format, parseISO } from 'date-fns';
-import { ArrowDownCircle, ArrowUpCircle, CircleSlash, Info } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, CircleSlash, Info, IndianRupee } from 'lucide-react'; // Added IndianRupee
 
 type TransactionHistoryListProps = {
   transactions: Transaction[];
@@ -30,13 +30,13 @@ const getTransactionIcon = (type: Transaction['type']) => {
 const getTransactionBadgeVariant = (type: Transaction['type']): "default" | "secondary" | "destructive" | "outline" => {
   switch (type) {
     case 'add_funds':
-      return 'default'; // Consider a success variant if available or custom
+      return 'default'; 
     case 'charge_success':
       return 'destructive';
     case 'charge_failed':
-      return 'secondary'; // Consider an orange/warning variant
+      return 'secondary'; 
     case 'status_change':
-      return 'outline'; // Consider an info variant
+      return 'outline'; 
     default:
       return 'secondary';
   }
@@ -45,7 +45,7 @@ const getTransactionBadgeVariant = (type: Transaction['type']): "default" | "sec
 export default function TransactionHistoryList({ transactions }: TransactionHistoryListProps) {
   const formatCurrency = (amount?: number) => {
     if (typeof amount !== 'number') return '';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   };
 
   const formatDate = (dateString: string) => {

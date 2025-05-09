@@ -6,10 +6,14 @@ import type { Subscription } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
-import { Package, Palette } from 'lucide-react';
+import { Package, Palette, IndianRupee } from 'lucide-react'; // Added IndianRupee
 
 type SpendByCategoryChartProps = {
   subscriptions: Subscription[];
+};
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
 };
 
 const categoryColors: { [key: string]: string } = {
@@ -18,7 +22,7 @@ const categoryColors: { [key: string]: string } = {
   SaaS: 'hsl(var(--chart-3))',
   Productivity: 'hsl(var(--chart-4))',
   Finance: 'hsl(var(--chart-5))',
-  'Health & Wellness': 'hsl(var(--chart-1))', // Re-use colors or add more chart vars
+  'Health & Wellness': 'hsl(var(--chart-1))',
   Shopping: 'hsl(var(--chart-2))',
   Education: 'hsl(var(--chart-3))',
   Other: 'hsl(var(--muted))',
@@ -34,7 +38,7 @@ const SpendByCategoryChart: React.FC<SpendByCategoryChartProps> = ({ subscriptio
     const frequency = subscription.frequency.toLowerCase();
     if (frequency === 'monthly') return amount;
     if (frequency === 'yearly') return amount / 12;
-    return 0; // Only monthly/yearly considered for this chart's total
+    return 0; 
   };
 
   const spendByCategory = activeSubscriptions.reduce((acc, sub) => {
@@ -62,32 +66,32 @@ const SpendByCategoryChart: React.FC<SpendByCategoryChartProps> = ({ subscriptio
 
   if (chartData.length === 0) {
     return (
-      <Card className="shadow-lg">
+      <Card className="shadow-lg border border-border/50">
         <CardHeader>
           <div className="flex items-center">
-            <Package className="h-6 w-6 text-primary mr-3" />
-            <CardTitle className="text-xl font-semibold">Spend by Category</CardTitle>
+            <Palette className="h-6 w-6 text-primary mr-3" />
+            <CardTitle className="text-xl font-semibold">Subscription Spend by Category</CardTitle>
           </div>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No categorized spending data available.</p>
+        <CardContent className="flex items-center justify-center h-48">
+          <p className="text-muted-foreground text-center">No categorized spending data available from active subscriptions.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="shadow-lg h-full flex flex-col">
+    <Card className="shadow-lg h-full flex flex-col border border-border/50">
       <CardHeader>
         <div className="flex items-center">
           <Palette className="h-6 w-6 text-primary mr-3" />
-          <CardTitle className="text-xl font-semibold">Spend by Category</CardTitle>
+          <CardTitle className="text-xl font-semibold">Subscription Spend by Category</CardTitle>
         </div>
-        <CardDescription>
-          Distribution of your estimated monthly subscription costs across different categories.
+        <CardDescription className="mt-1">
+          Visualize the distribution of your estimated monthly subscription costs across various service categories.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow flex items-center justify-center"> {/* Centering content */}
+      <CardContent className="flex-grow flex items-center justify-center">
         {chartData.length > 0 ? (
           <ChartContainer config={chartConfig} className="min-h-[250px] w-full max-w-md aspect-square">
             <ResponsiveContainer width="100%" height="100%">
@@ -96,7 +100,7 @@ const SpendByCategoryChart: React.FC<SpendByCategoryChartProps> = ({ subscriptio
                   cursor={false}
                   content={<ChartTooltipContent 
                     hideLabel 
-                    formatter={(value, name) => [`$${Number(value).toFixed(2)}`, name]}
+                    formatter={(value, name) => [formatCurrency(Number(value)), name]}
                     />} 
                 />
                 <Pie
@@ -106,7 +110,7 @@ const SpendByCategoryChart: React.FC<SpendByCategoryChartProps> = ({ subscriptio
                   cx="50%"
                   cy="50%"
                   outerRadius="80%"
-                  innerRadius="50%" // Makes it a donut chart
+                  innerRadius="50%" 
                   labelLine={false}
                   label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }) => {
                     const RADIAN = Math.PI / 180;
@@ -114,7 +118,7 @@ const SpendByCategoryChart: React.FC<SpendByCategoryChartProps> = ({ subscriptio
                     const x = cx + radius * Math.cos(-midAngle * RADIAN);
                     const y = cy + radius * Math.sin(-midAngle * RADIAN);
                     const percentage = (percent * 100).toFixed(0);
-                    if (parseInt(percentage) < 5) return null; // Hide small percentage labels
+                    if (parseInt(percentage) < 5) return null; 
 
                     return (
                       <text x={x} y={y} fill="hsl(var(--card-foreground))" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize="10px">
@@ -138,9 +142,11 @@ const SpendByCategoryChart: React.FC<SpendByCategoryChartProps> = ({ subscriptio
             </ResponsiveContainer>
           </ChartContainer>
         ) : (
-           <p className="text-muted-foreground text-center py-8">
-            No data to display for category spending. Ensure subscriptions have categories and costs.
-          </p>
+          <div className="flex items-center justify-center h-full">
+             <p className="text-muted-foreground text-center py-8">
+              No data to display for category spending. Ensure subscriptions have categories and costs.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

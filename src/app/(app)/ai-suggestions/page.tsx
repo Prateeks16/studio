@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-// Textarea removed as it's no longer used
 import { useToast } from '@/hooks/use-toast';
 import type { Subscription, SuggestSubscriptionAlternativesOutput } from '@/types';
 import { handleSuggestAlternatives } from '@/app/actions';
-import { Lightbulb, Loader2, Wand2 } from 'lucide-react';
+import { Lightbulb, Loader2, Wand2, IndianRupee } from 'lucide-react';
 import { getSubscriptionsFromStorage } from '@/lib/localStorageUtils';
 
 export default function AiSuggestionsPage() {
@@ -20,6 +19,10 @@ export default function AiSuggestionsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+  };
 
   const fetchSubscriptions = useCallback(() => {
     const storedSubscriptions = getSubscriptionsFromStorage();
@@ -104,7 +107,7 @@ export default function AiSuggestionsPage() {
                 {subscriptions.length > 0 ? (
                   subscriptions.map(sub => (
                     <SelectItem key={sub.id} value={sub.id}>
-                      {sub.vendor} ({new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(sub.amount)}/{sub.frequency})
+                      {sub.vendor} ({formatCurrency(sub.amount)}/{sub.frequency})
                     </SelectItem>
                   ))
                 ) : (
@@ -117,8 +120,8 @@ export default function AiSuggestionsPage() {
           {selectedSubscriptionDetails && (
              <div className="p-4 bg-secondary/50 rounded-lg">
                 <h3 className="text-sm font-medium text-foreground">Selected: {selectedSubscriptionDetails.vendor}</h3>
-                <p className="text-xs text-muted-foreground">
-                    Cost: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(selectedSubscriptionDetails.amount)} / {selectedSubscriptionDetails.frequency}
+                <p className="text-xs text-muted-foreground flex items-center">
+                    Cost: {formatCurrency(selectedSubscriptionDetails.amount)} / {selectedSubscriptionDetails.frequency}
                 </p>
              </div>
           )}
@@ -177,16 +180,6 @@ export default function AiSuggestionsPage() {
             ) : (
               <p className="text-muted-foreground">The AI could not find specific alternatives for this subscription at the moment.</p>
             )}
-            
-            {/* Reasoning section has been removed */}
-            {/* 
-            {suggestionResult.reasoning && (
-                <div>
-                    <h4 className="font-semibold mb-1 text-foreground">AI's Reasoning:</h4>
-                    <p className="text-sm text-muted-foreground italic bg-secondary/30 p-3 rounded-md">{suggestionResult.reasoning}</p>
-                </div>
-            )}
-            */}
           </CardContent>
         </Card>
       )}

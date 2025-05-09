@@ -8,7 +8,7 @@ import TransactionHistoryList from '@/components/dashboard/transaction-history-l
 import type { Wallet, Transaction } from '@/types';
 import { getWallet as getWalletService, getTransactions as getTransactionsService } from '@/services/walletService';
 import { useToast } from '@/hooks/use-toast';
-import { DollarSign, Wallet as WalletIcon, Loader2, PlusCircle } from 'lucide-react';
+import { IndianRupee, Wallet as WalletIcon, Loader2, PlusCircle } from 'lucide-react'; // Replaced DollarSign with IndianRupee
 
 const MOCK_USER_ID = 'defaultUser';
 const OPEN_ADD_FUNDS_MODAL_EVENT = 'payright-request-open-add-funds-modal';
@@ -67,7 +67,7 @@ export default function WalletPage() {
   }, [fetchWalletData, fetchTransactionData]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   };
 
   const handleOpenAddFundsModal = () => {

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Loader2, AlertCircle, PlayCircle, PauseCircle } from 'lucide-react'; // Changed Trash2 to RefreshCw
+import { RefreshCw, Loader2, AlertCircle, PlayCircle, PauseCircle } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -14,7 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 type SubscriptionsListProps = {
   subscriptions: Subscription[];
   onToggleUnused: (subscriptionId: string) => void; 
-  onRenewSubscription: (subscriptionId: string) => void; // Changed from onDeleteSubscription
+  onRenewSubscription: (subscriptionId: string) => void;
   onChargeSubscription: (subscription: Subscription) => void;
   onToggleSubscriptionStatus: (subscriptionId: string, newStatus: SubscriptionStatus) => void;
   isProcessingAction: boolean;
@@ -24,7 +24,7 @@ type SubscriptionsListProps = {
 export default function SubscriptionsList({
   subscriptions,
   onToggleUnused,
-  onRenewSubscription, // Changed from onDeleteSubscription
+  onRenewSubscription,
   onChargeSubscription,
   onToggleSubscriptionStatus,
   isProcessingAction,
@@ -32,7 +32,7 @@ export default function SubscriptionsList({
 }: SubscriptionsListProps) {
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
   };
 
   const formatDateSafe = (dateString?: string) => {
@@ -166,12 +166,12 @@ export default function SubscriptionsList({
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button 
-                          variant="outline" // Changed from ghost and removed destructive text
+                          variant="outline" 
                           size="icon" 
-                          onClick={() => onRenewSubscription(sub.id)} // Changed from onDeleteSubscription
+                          onClick={() => onRenewSubscription(sub.id)}
                           disabled={isProcessingAction}
-                          className="text-primary hover:bg-primary/10 hover:text-primary" // Non-destructive styling
-                          aria-label="Renew Subscription" // Changed aria-label
+                          className="text-primary hover:bg-primary/10 hover:text-primary"
+                          aria-label="Renew Subscription"
                         >
                           {isProcessingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                         </Button>

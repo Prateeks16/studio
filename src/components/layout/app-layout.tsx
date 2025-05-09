@@ -11,8 +11,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
-// SidebarWalletWidget and SidebarAiSuggestionWidget are removed
-import { CircleDollarSign, LogOut, Settings, Wallet as WalletIcon, User } from 'lucide-react'; // PlusCircle removed, User added
+import { CircleDollarSign, LogOut, Settings, Wallet as WalletIcon, User, IndianRupee } from 'lucide-react'; // Added IndianRupee
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useRouter } from 'next/navigation'; 
@@ -25,12 +24,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// Avatar components removed
-import type { Wallet } from '@/types'; // Transaction type removed as transactions aren't directly managed here for display
+import type { Wallet } from '@/types';
 import { getWallet as getWalletService, addFunds as addFundsService, getTransactions as getTransactionsService } from '@/services/walletService';
 import AddFundsModal from '@/components/dashboard/add-funds-modal';
 import { useToast } from "@/hooks/use-toast";
-import { cn } from '@/lib/utils'; // For conditional class names
+import { cn } from '@/lib/utils'; 
 
 const MOCK_USER_ID = 'defaultUser'; 
 const OPEN_ADD_FUNDS_MODAL_EVENT = 'payright-request-open-add-funds-modal';
@@ -50,6 +48,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   
   const [isAddFundsModalOpen, setIsAddFundsModalOpen] = React.useState(false);
   const [isAddingFunds, setIsAddingFunds] = React.useState(false);
+
+  const formatCurrency = (amount?: number) => {
+    if (typeof amount !== 'number') return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(0);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(amount);
+  };
 
   const fetchWalletData = React.useCallback(async () => {
     setIsWalletLoading(true);
@@ -78,7 +81,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     fetchWalletData();
   }, [fetchWalletData]);
 
-  // Event listener for opening AddFundsModal from other components (e.g. WalletPage)
   React.useEffect(() => {
     const handleRequestOpenModal = () => {
       setIsAddFundsModalOpen(true);
@@ -101,7 +103,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       window.dispatchEvent(new CustomEvent('payright-wallet-updated'));
 
 
-      toast({ title: 'Funds Added', description: `Successfully added $${amount.toFixed(2)} to your wallet.` });
+      toast({ title: 'Funds Added', description: `Successfully added ${formatCurrency(amount)} to your wallet.` });
       setIsAddFundsModalOpen(false);
     } catch (e: any)
 {
@@ -118,12 +120,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     localStorage.removeItem('payright-transactions');
     router.push('/login');
   };
-  
-  const formatCurrency = (amount?: number) => {
-    if (typeof amount !== 'number') return '$0.00';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
-  };
-
 
   return (
     <SidebarProvider open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
@@ -136,7 +132,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </h1>
           </Link>
         </SidebarHeader>
-        <SidebarContent className="flex flex-col"> {/* Ensure content can grow and push footer down */}
+        <SidebarContent className="flex flex-col">
           <SidebarNav />
           <div className="mt-auto p-2 group-data-[collapsible=icon]:p-1 border-t border-sidebar-border">
              <div className={cn(
@@ -150,12 +146,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
               {isWalletLoading ? (
                  <span className="text-sm text-sidebar-primary group-data-[collapsible=icon]:text-xs">...</span>
               ) : (
-                <span className="text-sm font-semibold text-sidebar-primary group-data-[collapsible=icon]:text-xs">
-                  {wallet ? formatCurrency(wallet.balance) : formatCurrency(0)}
+                <span className="text-sm font-semibold text-sidebar-primary group-data-[collapsible=icon]:text-xs flex items-center">
+                  <IndianRupee className="h-3 w-3 mr-0.5 group-data-[collapsible=icon]:hidden" />
+                  {wallet ? formatCurrency(wallet.balance).replace('₹', '') : formatCurrency(0).replace('₹', '')}
                 </span>
               )}
             </div>
-            {/* "Add Funds" button removed from here */}
           </div>
         </SidebarContent>
         <SidebarFooter className="p-4 group-data-[collapsible=icon]:p-2 border-t border-sidebar-border">
@@ -169,7 +165,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 lg:h-[60px] lg:px-6">
           <SidebarTrigger className="md:hidden" />
           <div className="flex-1">
-            {/* Breadcrumbs or page title can go here */}
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -214,4 +209,3 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </SidebarProvider>
   );
 }
-

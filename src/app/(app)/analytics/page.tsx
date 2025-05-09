@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, BarChartHorizontalBig, AlertTriangle } from 'lucide-react';
+import { Loader2, BarChartHorizontalBig, AlertTriangle, PieChart, TrendingUp } from 'lucide-react';
 import type { Subscription, Transaction } from '@/types';
 import { getSubscriptionsFromStorage, getTransactionsFromStorage } from '@/lib/localStorageUtils';
 import TotalMonthlySpendChart from '@/components/analytics/total-monthly-spend-chart';
@@ -49,7 +49,7 @@ export default function AnalyticsPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[calc(100vh-200px)]">
         <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading analytics data...</p>
+        <p className="text-lg text-muted-foreground">Loading financial insights...</p>
       </div>
     );
   }
@@ -64,9 +64,9 @@ export default function AnalyticsPage() {
         </CardHeader>
         <CardContent>
           <p>{error}</p>
-          <button onClick={fetchData} className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">
+          <Button onClick={fetchData} className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">
             Retry
-          </button>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -74,26 +74,35 @@ export default function AnalyticsPage() {
   
   return (
     <div className="space-y-8">
-      <Card className="shadow-xl">
-        <CardHeader className="pb-3">
-          <div className="flex items-center">
-            <BarChartHorizontalBig className="h-8 w-8 text-primary mr-3" />
-            <CardTitle className="text-2xl font-bold tracking-tight">Subscription Analytics</CardTitle>
+      <Card className="shadow-xl bg-gradient-to-r from-primary/10 via-background to-background">
+        <CardHeader className="pb-6">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-primary rounded-full">
+              <BarChartHorizontalBig className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Financial Insights & Trends</CardTitle>
+              <CardDescription className="mt-1 text-base text-muted-foreground">
+                Explore your subscription spending patterns, category breakdowns, and activity over time.
+              </CardDescription>
+            </div>
           </div>
-          <CardDescription>
-            Visualize your subscription spending, categories, and activity trends.
-          </CardDescription>
         </CardHeader>
       </Card>
 
-      {subscriptions.length === 0 && transactions.length === 0 && (
-         <Card className="shadow-lg">
-            <CardContent className="p-10 text-center">
-                <BarChartHorizontalBig className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <p className="text-xl font-semibold text-muted-foreground">No Data Available</p>
-                <p className="text-sm text-muted-foreground">
-                    Sync your bank data on the Dashboard to see analytics.
+      {(subscriptions.length === 0 && transactions.length === 0) && (
+         <Card className="shadow-lg border-2 border-dashed border-muted">
+            <CardContent className="p-10 text-center flex flex-col items-center justify-center space-y-4">
+                <div className="flex space-x-4 text-muted-foreground">
+                    <PieChart className="h-16 w-16 opacity-50" />
+                    <TrendingUp className="h-16 w-16 opacity-50" />
+                </div>
+                <p className="text-xl font-semibold text-muted-foreground">No Analytics Data Yet</p>
+                <p className="text-sm text-muted-foreground max-w-md">
+                    It looks like there's no subscription or transaction data to analyze. 
+                    Please sync your bank data or email on the Dashboard page to populate your financial insights.
                 </p>
+                <Button variant="outline" onClick={() => window.location.href='/dashboard'}>Go to Dashboard</Button>
             </CardContent>
         </Card>
       )}
@@ -108,8 +117,10 @@ export default function AnalyticsPage() {
         )}
       </div>
       
-      {transactions.length > 0 && (
-         <SubscriptionStatusTrendsChart transactions={transactions} />
+      {transactions.length > 0 && ( // This chart should be full-width if it's the only one in a row or on its own
+         <div className="grid gap-8 md:grid-cols-1">
+            <SubscriptionStatusTrendsChart transactions={transactions} />
+         </div>
       )}
     </div>
   );
