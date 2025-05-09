@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CircleDollarSign, TrendingUp, EyeOff } from "lucide-react";
@@ -13,8 +14,8 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold text-primary">PayRight</h1>
         </div>
         <nav>
-          <Link href="/dashboard">
-            <Button variant="outline">Go to Dashboard</Button>
+          <Link href="/login">
+            <Button variant="outline">Login / Sign Up</Button>
           </Link>
         </nav>
       </header>
@@ -37,7 +38,7 @@ export default function HomePage() {
                 Take Control of Your Subscriptions
               </CardTitle>
               <CardDescription className="mt-4 text-lg text-muted-foreground">
-                PayRight helps you detect recurring charges, predict renewals, find cheaper alternatives, and manage your subscription spending effectively.
+                PayRight helps you detect recurring charges, find cheaper alternatives, and manage your subscription spending effectively.
               </CardDescription>
             </CardHeader>
             <CardContent className="grid md:grid-cols-3 gap-6 mt-6">
@@ -53,12 +54,12 @@ export default function HomePage() {
               </div>
               <div className="flex flex-col items-center p-4 bg-secondary/50 rounded-lg">
                 <EyeOff className="h-10 w-10 text-primary mb-2" />
-                <h3 className="font-semibold">Avoid Surprises</h3>
-                <p className="text-sm text-muted-foreground">Predict renewal dates and get usage alerts.</p>
+                <h3 className="font-semibold">Track Spending</h3> {/* Changed from "Avoid Surprises" */}
+                <p className="text-sm text-muted-foreground">Understand where your money goes.</p>
               </div>
             </CardContent>
             <CardFooter className="mt-8 flex justify-center">
-              <Link href="/dashboard">
+              <Link href="/signup">
                 <Button size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
                   Get Started Now
                 </Button>
@@ -98,3 +99,4 @@ function ScanLineIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   )
 }
+
