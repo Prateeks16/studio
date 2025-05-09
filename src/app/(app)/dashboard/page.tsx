@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -10,8 +9,6 @@ import SubscriptionsList from '@/components/dashboard/subscriptions-list';
 import AlternativeSuggestionModal from '@/components/dashboard/alternative-suggestion-modal';
 import AlertsSection from '@/components/dashboard/alerts-section';
 import { handleDetectCharges, handleSuggestAlternatives } from '@/app/actions';
-// DetectRecurringChargesOutput and SuggestSubscriptionAlternativesOutput are already imported via @/types
-// import type { DetectRecurringChargesOutput, SuggestSubscriptionAlternativesOutput } from '@/types'; 
 import { BarChart3, FileScan } from 'lucide-react';
 import Image from 'next/image';
 
@@ -23,6 +20,7 @@ export default function DashboardPage() {
 
   const [isSuggestModalOpen, setIsSuggestModalOpen] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
+  const [isSuggestingAlternatives, setIsSuggestingAlternatives] = useState(false); // New state for suggestion loading
 
   const onChargesDetected = async (bankData: string) => {
     setIsLoading(true);
@@ -44,7 +42,7 @@ export default function DashboardPage() {
       setSubscriptions(newSubs); 
       toast({ title: 'Charges Detected', description: `${newSubs.length} potential subscriptions found.` });
     } else {
-      setSubscriptions([]); // Ensure subscriptions are empty if no charges found
+      setSubscriptions([]);
       toast({ title: 'No Charges Detected', description: 'Could not find recurring charges from the provided data.' });
     }
   };
@@ -68,7 +66,7 @@ export default function DashboardPage() {
         setSubscriptions([]);
       }
     } else {
-        setSubscriptions([]); // Start with an empty list if nothing in localStorage
+        setSubscriptions([]); 
     }
     setIsLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,21 +83,30 @@ export default function DashboardPage() {
     const sub = subscriptions.find(s => s.id === subId);
     if (!sub) return;
     
-    const result = await handleSuggestAlternatives({ 
-      subscriptionName: sub.vendor, 
-      userNeeds, 
-      currentCost: sub.amount 
-    });
+    setIsSuggestingAlternatives(true);
+    try {
+      const result = await handleSuggestAlternatives({ 
+        subscriptionName: sub.vendor, 
+        userNeeds, 
+        currentCost: sub.amount 
+      });
 
-    if ('error' in result) {
-      toast({ title: 'Error Suggesting Alternatives', description: result.error, variant: 'destructive' });
+      if ('error' in result) {
+        toast({ title: 'Error Suggesting Alternatives', description: result.error, variant: 'destructive' });
+        // Keep modal open on error if needed, or close:
+        // setIsSuggestModalOpen(false); 
+        return;
+      }
+      
+      setSubscriptions(subs => subs.map(s => s.id === subId ? { ...s, alternatives: result.alternatives, alternativesReasoning: result.reasoning, userNeeds } : s));
+      toast({ title: 'Alternatives Found', description: `Alternatives for ${sub.vendor} suggested.` });
       setIsSuggestModalOpen(false); 
-      return;
+    } catch (e) {
+      console.error("Exception in onSuggestAlternatives:", e);
+      toast({ title: 'Error Suggesting Alternatives', description: "An unexpected error occurred while fetching suggestions.", variant: 'destructive' });
+    } finally {
+      setIsSuggestingAlternatives(false);
     }
-    
-    setSubscriptions(subs => subs.map(s => s.id === subId ? { ...s, alternatives: result.alternatives, alternativesReasoning: result.reasoning, userNeeds } : s));
-    toast({ title: 'Alternatives Found', description: `Alternatives for ${sub.vendor} suggested.` });
-    setIsSuggestModalOpen(false); 
   };
 
   const handleToggleUnused = (subId: string) => {
@@ -129,7 +136,7 @@ export default function DashboardPage() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''; // Clear file input value for re-selection of same file
+      fileInputRef.current.value = '';
     }
 
     if (file) {
@@ -224,10 +231,9 @@ export default function DashboardPage() {
           onClose={() => { setIsSuggestModalOpen(false); setSelectedSubscription(null); }}
           subscription={selectedSubscription}
           onSuggest={onSuggestAlternatives}
-          isLoading={false} 
+          isLoading={isSuggestingAlternatives} // Pass the new loading state
         />
       )}
     </div>
   );
 }
-
