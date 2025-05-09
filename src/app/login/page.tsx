@@ -40,12 +40,12 @@ export default function LoginPage() {
         <CardHeader className="text-center">
            <div className="mx-auto mb-4">
             <Image 
-              src="https://picsum.photos/seed/payright_login/80/80" 
+              src="https://picsum.photos/seed/payright_login_v2/80/80" 
               alt="Login Icon" 
               width={80} 
               height={80} 
               className="rounded-full shadow-lg"
-              data-ai-hint="login security icon"
+              data-ai-hint="secure login"
             />
           </div>
           <CardTitle className="text-3xl font-bold">Login to PayRight</CardTitle>

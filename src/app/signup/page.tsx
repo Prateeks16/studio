@@ -40,12 +40,12 @@ export default function SignUpPage() {
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <Image 
-              src="https://picsum.photos/seed/payright_signup/80/80" 
+              src="https://picsum.photos/seed/payright_signup_v2/80/80" 
               alt="Sign Up Icon" 
               width={80} 
               height={80} 
               className="rounded-full shadow-lg"
-              data-ai-hint="user registration icon"
+              data-ai-hint="user join"
             />
           </div>
           <CardTitle className="text-3xl font-bold">Create your PayRight Account</CardTitle>

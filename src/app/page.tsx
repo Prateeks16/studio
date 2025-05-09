@@ -26,12 +26,12 @@ export default function HomePage() {
             <CardHeader>
               <div className="mx-auto mb-6">
                 <Image 
-                  src="https://picsum.photos/seed/payright_logo/120/120" 
+                  src="https://picsum.photos/seed/payright_logo_v2/120/120" 
                   alt="PayRight App Icon" 
                   width={120} 
                   height={120} 
                   className="rounded-full shadow-lg"
-                  data-ai-hint="finance app logo" 
+                  data-ai-hint="brand logo" 
                 />
               </div>
               <CardTitle className="text-4xl font-extrabold tracking-tight lg:text-5xl">
