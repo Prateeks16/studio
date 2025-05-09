@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Subscription, SubscriptionStatus } from '@/types';
@@ -6,24 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, MoreVertical, Loader2, AlertCircle, PlayCircle, PauseCircle, DollarSign } from 'lucide-react'; // Lightbulb icon removed
+import { Trash2, Loader2, AlertCircle, PlayCircle, PauseCircle } from 'lucide-react';
 import { format, parseISO, isValid } from 'date-fns';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 type SubscriptionsListProps = {
   subscriptions: Subscription[];
-  // onSuggestAlternatives: (subscription: Subscription) => void; // Removed prop
   onToggleUnused: (subscriptionId: string) => void; 
   onDeleteSubscription: (subscriptionId: string) => void;
-  onChargeSubscription: (subscription: Subscription) => void;
+  onChargeSubscription: (subscription: Subscription) => void; // Still passed but not used in this column directly
   onToggleSubscriptionStatus: (subscriptionId: string, newStatus: SubscriptionStatus) => void;
   isProcessingAction: boolean;
   isLoading: boolean;
@@ -31,10 +22,9 @@ type SubscriptionsListProps = {
 
 export default function SubscriptionsList({
   subscriptions,
-  // onSuggestAlternatives, // Prop removed
   onToggleUnused,
   onDeleteSubscription,
-  onChargeSubscription,
+  onChargeSubscription, // Prop remains for potential future use or other components
   onToggleSubscriptionStatus,
   isProcessingAction,
   isLoading
@@ -93,8 +83,8 @@ export default function SubscriptionsList({
                 <TableHead className="text-right">Amount</TableHead>
                 <TableHead>Frequency</TableHead>
                 <TableHead>Next Due</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Current Status</TableHead>
+                <TableHead className="text-right">Controls</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -140,39 +130,53 @@ export default function SubscriptionsList({
                         </Tooltip>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" disabled={isProcessingAction}>
-                          {isProcessingAction && subscriptions.some(s => s.id === sub.id) ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreVertical className="h-4 w-4" />}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {/* "Find Alternatives" DropdownMenuItem removed */}
-                        {/* <DropdownMenuItem onClick={() => onSuggestAlternatives(sub)} disabled={isProcessingAction}>
-                          <Lightbulb className="mr-2 h-4 w-4" /> Find Alternatives
-                        </DropdownMenuItem> */}
-                        
-                        {sub.status === 'active' && (
-                          <DropdownMenuItem onClick={() => onChargeSubscription(sub)} disabled={isProcessingAction}>
-                            <DollarSign className="mr-2 h-4 w-4" /> Charge Now
-                          </DropdownMenuItem>
-                        )}
-
-                        <DropdownMenuItem 
-                          onClick={() => onToggleSubscriptionStatus(sub.id, sub.status === 'active' ? 'paused' : 'active')}
+                  <TableCell className="text-right space-x-2">
+                    {sub.status === 'active' ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => onToggleSubscriptionStatus(sub.id, 'paused')}
+                            disabled={isProcessingAction}
+                            aria-label="Pause Subscription"
+                          >
+                            {isProcessingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <PauseCircle className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Pause Subscription</TooltipContent>
+                      </Tooltip>
+                    ) : (
+                       <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => onToggleSubscriptionStatus(sub.id, 'active')}
+                            disabled={isProcessingAction}
+                            aria-label="Activate Subscription"
+                          >
+                            {isProcessingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Activate Subscription</TooltipContent>
+                      </Tooltip>
+                    )}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => onDeleteSubscription(sub.id)} 
                           disabled={isProcessingAction}
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          aria-label="Delete Subscription"
                         >
-                          {sub.status === 'active' ? <PauseCircle className="mr-2 h-4 w-4" /> : <PlayCircle className="mr-2 h-4 w-4" />}
-                          {sub.status === 'active' ? 'Pause' : 'Unpause'} Subscription
-                        </DropdownMenuItem>
-
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => onDeleteSubscription(sub.id)} className="text-destructive focus:bg-destructive/10 focus:text-destructive" disabled={isProcessingAction}>
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {isProcessingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete Subscription</TooltipContent>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
