@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
 // SidebarWalletWidget and SidebarAiSuggestionWidget are removed
-import { CircleDollarSign, LogOut, Settings, PlusCircle, Wallet as WalletIcon } from 'lucide-react';
+import { CircleDollarSign, LogOut, Settings, Wallet as WalletIcon } from 'lucide-react'; // PlusCircle removed
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useRouter } from 'next/navigation'; 
@@ -78,7 +78,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     fetchWalletData();
   }, [fetchWalletData]);
 
-  // Event listener for opening AddFundsModal
+  // Event listener for opening AddFundsModal from other components (e.g. WalletPage)
   React.useEffect(() => {
     const handleRequestOpenModal = () => {
       setIsAddFundsModalOpen(true);
@@ -87,7 +87,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return () => {
       window.removeEventListener(OPEN_ADD_FUNDS_MODAL_EVENT, handleRequestOpenModal);
     };
-  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+  }, []); 
 
 
   const onAddFundsSubmit = async (amount: number) => {
@@ -152,14 +152,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </span>
               )}
             </div>
-            <Button
-              variant="ghost"
-              className="w-full justify-start group-data-[collapsible=icon]:justify-center hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              onClick={() => setIsAddFundsModalOpen(true)}
-            >
-              <PlusCircle className="h-5 w-5" />
-              <span className="ml-2 group-data-[collapsible=icon]:hidden">Add Funds</span>
-            </Button>
+            {/* "Add Funds" button removed from here */}
           </div>
         </SidebarContent>
         <SidebarFooter className="p-4 group-data-[collapsible=icon]:p-2 border-t border-sidebar-border">
@@ -221,3 +214,4 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </SidebarProvider>
   );
 }
+
