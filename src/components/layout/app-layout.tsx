@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
 // SidebarWalletWidget and SidebarAiSuggestionWidget are removed
-import { CircleDollarSign, LogOut, Settings, Wallet as WalletIcon } from 'lucide-react'; // PlusCircle removed
+import { CircleDollarSign, LogOut, Settings, Wallet as WalletIcon, User } from 'lucide-react'; // PlusCircle removed, User added
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useRouter } from 'next/navigation'; 
@@ -25,7 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// Avatar components removed
 import type { Wallet } from '@/types'; // Transaction type removed as transactions aren't directly managed here for display
 import { getWallet as getWalletService, addFunds as addFundsService, getTransactions as getTransactionsService } from '@/services/walletService';
 import AddFundsModal from '@/components/dashboard/add-funds-modal';
@@ -113,6 +113,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('payright-subscriptions');
+    localStorage.removeItem('payright-wallets');
+    localStorage.removeItem('payright-transactions');
     router.push('/login');
   };
   
@@ -171,10 +174,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="https://picsum.photos/seed/avatar/40/40" alt="User Avatar" data-ai-hint="user avatar" />
-                  <AvatarFallback>JD</AvatarFallback>
-                </Avatar>
+                <User className="h-6 w-6" /> 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>

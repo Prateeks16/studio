@@ -16,6 +16,12 @@ export default function LoginPage() {
 
   const handleLogin = (event: React.FormEvent) => {
     event.preventDefault();
+    // Clear user-specific data from localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('payright-subscriptions');
+      localStorage.removeItem('payright-wallets');
+      localStorage.removeItem('payright-transactions');
+    }
     // In a real app, you would handle authentication here
     // For now, we just navigate to the dashboard
     router.push('/dashboard');
