@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import AlternativeSuggestionModal from '@/components/dashboard/alternative-sugge
 import AlertsSection from '@/components/dashboard/alerts-section';
 import { handleDetectCharges, handleSuggestAlternatives } from '@/app/actions';
 import type { DetectRecurringChargesOutput, SuggestSubscriptionAlternativesOutput } from '@/types';
-import { PlusCircle, BarChart3, FileScan } from 'lucide-react';
+import { BarChart3, FileScan } from 'lucide-react';
 import Image from 'next/image';
 
 export default function DashboardPage() {
@@ -23,6 +22,8 @@ export default function DashboardPage() {
   const [selectedSubscription, setSelectedSubscription] = useState<Subscription | null>(null);
 
   const generateMockBankData = () => {
+    // This is where you can provide more diverse or specific mock data
+    // For now, it uses the same data as before.
     return `
       Transaction: Netflix Premium - $19.99 on 2024-06-15 for monthly streaming
       Transaction: Spotify Family Plan - $16.99 on 2024-06-10 for music service
@@ -38,7 +39,7 @@ export default function DashboardPage() {
 
   const onChargesDetected = async (bankData: string) => {
     setIsLoading(true);
-    setSubscriptions([]); 
+    setSubscriptions([]); // Clear existing subscriptions
     const result = await handleDetectCharges({ bankData });
     setIsLoading(false);
 
@@ -60,26 +61,17 @@ export default function DashboardPage() {
     }
   };
   
+  // useEffect to load subscriptions from localStorage on initial mount
   useEffect(() => {
-    const initialBankData = generateMockBankData();
-    onChargesDetected(initialBankData);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
-
-  useEffect(() => {
-    if (!isLoading) { 
-        localStorage.setItem('payright-subscriptions', JSON.stringify(subscriptions));
-    }
-  }, [subscriptions, isLoading]);
-
-  useEffect(() => {
+    setIsLoading(true);
     const storedSubscriptions = localStorage.getItem('payright-subscriptions');
-    if (storedSubscriptions && subscriptions.length === 0 && isLoading) { 
+    if (storedSubscriptions) {
       try {
         const parsedSubs = JSON.parse(storedSubscriptions);
-        if (parsedSubs.length > 0 && 'vendor' in parsedSubs[0]) {
+        if (Array.isArray(parsedSubs) && (parsedSubs.length === 0 || (parsedSubs.length > 0 && 'vendor' in parsedSubs[0]))) {
             setSubscriptions(parsedSubs);
         } else {
+            console.warn("Invalid data in localStorage, clearing.");
             localStorage.removeItem('payright-subscriptions'); 
         }
       } catch (error) {
@@ -87,30 +79,43 @@ export default function DashboardPage() {
         localStorage.removeItem('payright-subscriptions');
       }
     }
+    setIsLoading(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading]); 
+  }, []); // Empty dependency array: run only on mount and unmount
+
+  // useEffect to save subscriptions to localStorage whenever they change (and not loading)
+  useEffect(() => {
+    if (!isLoading) { 
+        localStorage.setItem('payright-subscriptions', JSON.stringify(subscriptions));
+    }
+  }, [subscriptions, isLoading]);
 
 
   const onSuggestAlternatives = async (subId: string, userNeeds: string) => {
     const sub = subscriptions.find(s => s.id === subId);
     if (!sub) return;
     
-    setIsLoading(true);
+    // No need to set isLoading for the whole page here, as the modal has its own loading state.
+    // However, if the modal's isLoading prop is tied to the page's isLoading, keep it.
+    // For now, let's assume the modal handles its own loading state primarily.
+    // setIsSuggestModalOpen(false) will be called after the API call.
+
     const result = await handleSuggestAlternatives({ 
       subscriptionName: sub.vendor, 
       userNeeds, 
       currentCost: sub.amount 
     });
-    setIsLoading(false);
-    setIsSuggestModalOpen(false);
+    // Set modal's loading to false if applicable, or page's if it was set true for this.
 
     if ('error' in result) {
       toast({ title: 'Error Suggesting Alternatives', description: result.error, variant: 'destructive' });
+      setIsSuggestModalOpen(false); // Close modal on error too
       return;
     }
     
     setSubscriptions(subs => subs.map(s => s.id === subId ? { ...s, alternatives: result.alternatives, alternativesReasoning: result.reasoning, userNeeds } : s));
     toast({ title: 'Alternatives Found', description: `Alternatives for ${sub.vendor} suggested.` });
+    setIsSuggestModalOpen(false); // Close modal on success
   };
 
   const handleToggleUnused = (subId: string) => {
@@ -144,13 +149,13 @@ export default function DashboardPage() {
       <Card className="shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-2xl font-bold">Subscription Dashboard</CardTitle>
-           <Button onClick={handleSyncBankData} variant="outline" disabled={isLoading}>
+           <Button onClick={handleSyncBankData} variant="outline" disabled={isLoading && subscriptions.length > 0}>
             <FileScan className="mr-2 h-4 w-4" /> Sync Bank Data
           </Button>
         </CardHeader>
         <CardContent>
           <CardDescription>
-            Automatically detected recurring charges from mock data, estimated renewals, and potential cost-saving alternatives.
+            Analyze mock bank data to detect recurring charges, estimate renewals, and find potential cost-saving alternatives.
           </CardDescription>
         </CardContent>
       </Card>
@@ -167,9 +172,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Our AI didn't find any recurring subscriptions in the mock data.
-              <br />
-              Click "Sync Bank Data" to re-analyze or check back later.
+              Your dashboard is empty. Click "Sync Bank Data" to analyze mock transactions and find your subscriptions.
             </p>
              <Image 
               src="https://picsum.photos/seed/dashboard_empty_alt/400/250" 
@@ -187,7 +190,7 @@ export default function DashboardPage() {
           onSuggestAlternatives={handleOpenSuggestModal}
           onToggleUnused={handleToggleUnused}
           onDeleteSubscription={handleDeleteSubscription}
-          isLoading={isLoading}
+          isLoading={isLoading} // Pass isLoading to show loading state in list if needed
         />
       )}
 
@@ -197,7 +200,10 @@ export default function DashboardPage() {
           onClose={() => { setIsSuggestModalOpen(false); setSelectedSubscription(null); }}
           subscription={selectedSubscription}
           onSuggest={onSuggestAlternatives}
-          isLoading={isLoading}
+          // The modal should ideally have its own internal loading state for the suggest action.
+          // Passing the page's isLoading might not be ideal if suggest is quick & page is loading other things.
+          // For now, let's assume the modal's onSuggest will handle its specific loading indication.
+          isLoading={false} // Let modal manage its own submit button loading state.
         />
       )}
     </div>
