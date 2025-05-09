@@ -1,0 +1,33 @@
+# Git files
+.git
+.gitignore
+
+# Node modules (managed by Dockerfile)
+node_modules
+
+# Next.js build output (managed by Dockerfile)
+.next
+
+# npm debug log
+npm-debug.log
+*.log
+
+# Environment files (should be injected at runtime)
+.env
+.env*.local
+.env*.development
+.env*.production
+!.env.example
+
+# VSCode specific
+.vscode
+
+# Readme
+README.md
+
+# macOS specific
+.DS_Store
+
+# Test files or directories if any (example)
+# tests/
+# coverage/
