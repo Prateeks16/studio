@@ -11,8 +11,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import type { DetectRecurringChargesOutput } from './detect-recurring-charges'; // Re-use existing output type
-import { DetectRecurringChargesOutputSchema } from './detect-recurring-charges'; // Re-use existing output schema
+// Import schema and type from types.ts
+import type { DetectRecurringChargesOutput } from '@/types'; 
+import { DetectRecurringChargesOutputSchema } from '@/types'; 
 
 const DetectChargesFromEmailInputSchema = z.object({
   emailContent: z
@@ -31,7 +32,7 @@ export async function detectChargesFromEmail(input: DetectChargesFromEmailInput)
 const prompt = ai.definePrompt({
   name: 'detectChargesFromEmailPrompt',
   input: {schema: DetectChargesFromEmailInputSchema},
-  output: {schema: DetectRecurringChargesOutputSchema}, // Use the same output schema
+  output: {schema: DetectRecurringChargesOutputSchema}, // Use the imported schema
   prompt: `You are an expert financial analyst. Analyze the following email content (which might contain multiple emails separated by '---' or similar) and identify any recurring subscription payments, sign-up confirmations, or billing statements.
 For each detected subscription, extract or infer the following:
 - vendor: The name of the subscription vendor (e.g., Netflix, Spotify, AWS).
@@ -53,7 +54,7 @@ const detectChargesFromEmailFlow = ai.defineFlow(
   {
     name: 'detectChargesFromEmailFlow',
     inputSchema: DetectChargesFromEmailInputSchema,
-    outputSchema: DetectRecurringChargesOutputSchema, // Use the same output schema
+    outputSchema: DetectRecurringChargesOutputSchema, // Use the imported schema
   },
   async input => {
     try {
@@ -83,3 +84,4 @@ const detectChargesFromEmailFlow = ai.defineFlow(
     }
   }
 );
+

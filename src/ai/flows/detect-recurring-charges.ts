@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -6,11 +7,13 @@
  * - detectRecurringCharges - A function that analyzes bank data to identify recurring charges.
  * - DetectRecurringChargesInput - The input type for the detectRecurringCharges function.
  * - DetectRecurringChargesOutput - The return type for the detectRecurringCharges function.
- * - DetectRecurringChargesOutputSchema - The Zod schema for the output.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+// Import schema and type from types.ts
+import type { DetectRecurringChargesOutput } from '@/types';
+import { DetectRecurringChargesOutputSchema } from '@/types';
 
 const DetectRecurringChargesInputSchema = z.object({
   bankData: z
@@ -19,20 +22,8 @@ const DetectRecurringChargesInputSchema = z.object({
 });
 export type DetectRecurringChargesInput = z.infer<typeof DetectRecurringChargesInputSchema>;
 
-const SubscriptionCategorySchema = z.enum(['Entertainment', 'Utilities', 'SaaS', 'Productivity', 'Finance', 'Health & Wellness', 'Shopping', 'Education', 'Other']);
-
-export const DetectRecurringChargesOutputSchema = z.array(
-  z.object({
-    vendor: z.string().describe('The name of the subscription vendor (e.g., Netflix, Spotify).'),
-    amount: z.number().describe('The recurring charge amount.'),
-    frequency: z.string().describe('The frequency of the charge (e.g., monthly, yearly).'),
-    last_payment_date: z.string().describe('The date of the last payment (YYYY-MM-DD).'),
-    next_due_date: z.string().describe('The estimated next due date (YYYY-MM-DD).'),
-    usage_count: z.number().optional().describe('A mock or simulated usage count. 0 indicates potentially unused.'),
-    category: SubscriptionCategorySchema.describe('The category of the subscription (e.g., Entertainment, Utilities, SaaS, Productivity, Finance, Health & Wellness, Shopping, Education, Other). Assign "Other" if unsure or it doesn\'t fit well.'),
-  })
-);
-export type DetectRecurringChargesOutput = z.infer<typeof DetectRecurringChargesOutputSchema>;
+// DetectRecurringChargesOutputSchema is now imported
+// DetectRecurringChargesOutput type is now imported
 
 export async function detectRecurringCharges(input: DetectRecurringChargesInput): Promise<DetectRecurringChargesOutput> {
   return detectRecurringChargesFlow(input);
@@ -41,7 +32,7 @@ export async function detectRecurringCharges(input: DetectRecurringChargesInput)
 const prompt = ai.definePrompt({
   name: 'detectRecurringChargesPrompt',
   input: {schema: DetectRecurringChargesInputSchema},
-  output: {schema: DetectRecurringChargesOutputSchema},
+  output: {schema: DetectRecurringChargesOutputSchema}, // Use imported schema
   prompt: `You are an expert financial analyst. Analyze the following bank transaction data and identify any recurring subscription payments.
 For each detected subscription, return a JSON array of objects, where each object contains:
 - vendor: The name of the subscription vendor (e.g., Netflix, Spotify, AWS).
@@ -63,7 +54,7 @@ const detectRecurringChargesFlow = ai.defineFlow(
   {
     name: 'detectRecurringChargesFlow',
     inputSchema: DetectRecurringChargesInputSchema,
-    outputSchema: DetectRecurringChargesOutputSchema,
+    outputSchema: DetectRecurringChargesOutputSchema, // Use imported schema
   },
   async input => {
     try {
