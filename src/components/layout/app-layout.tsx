@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
 import SidebarWalletWidget from './sidebar-wallet-widget';
-import SidebarAiSuggestionWidget from './sidebar-ai-suggestion-widget'; // Import the new widget
+import SidebarAiSuggestionWidget from './sidebar-ai-suggestion-widget'; 
 import { CircleDollarSign, LogOut, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import React from 'react';
@@ -27,8 +27,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { Wallet } from '@/types';
-import { getWallet as getWalletService, addFunds as addFundsService } from '@/services/walletService';
+import type { Wallet, Transaction } from '@/types';
+import { getWallet as getWalletService, addFunds as addFundsService, getTransactions as getTransactionsService } from '@/services/walletService';
 import AddFundsModal from '@/components/dashboard/add-funds-modal';
 import { useToast } from "@/hooks/use-toast";
 
@@ -45,6 +45,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const [wallet, setWallet] = React.useState<Wallet | null>(null);
   const [isWalletLoading, setIsWalletLoading] = React.useState(true);
+  const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+  const [isTransactionsLoading, setIsTransactionsLoading] = React.useState(true);
   const [isAddFundsModalOpen, setIsAddFundsModalOpen] = React.useState(false);
   const [isAddingFunds, setIsAddingFunds] = React.useState(false);
 
@@ -62,15 +64,31 @@ export default function AppLayout({ children }: AppLayoutProps) {
     }
   }, [toast]);
 
+  const fetchTransactionData = React.useCallback(async () => {
+    setIsTransactionsLoading(true);
+    try {
+      const fetchedTransactions = await getTransactionsService(MOCK_USER_ID);
+      setTransactions(fetchedTransactions || []);
+    } catch (e: any) {
+      const errorMessage = e instanceof Error ? e.message : "Failed to retrieve transaction data.";
+      toast({ title: 'Error fetching transactions', description: errorMessage, variant: 'destructive' });
+      setTransactions([]);
+    } finally {
+      setIsTransactionsLoading(false);
+    }
+  }, [toast]);
+
   React.useEffect(() => {
     fetchWalletData();
-  }, [fetchWalletData]);
+    fetchTransactionData();
+  }, [fetchWalletData, fetchTransactionData]);
 
   const onAddFundsSubmit = async (amount: number) => {
     setIsAddingFunds(true);
     try {
       await addFundsService(MOCK_USER_ID, amount); 
       await fetchWalletData(); 
+      await fetchTransactionData(); // Refresh transactions after adding funds
       toast({ title: 'Funds Added', description: `Successfully added $${amount.toFixed(2)} to your wallet.` });
       setIsAddFundsModalOpen(false);
     } catch (e: any) {
@@ -100,10 +118,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <SidebarNav />
           <SidebarWalletWidget 
             wallet={wallet} 
-            isLoading={isWalletLoading} 
+            isLoadingWallet={isWalletLoading} 
+            transactions={transactions}
+            isLoadingTransactions={isTransactionsLoading}
             onAddFundsClick={() => setIsAddFundsModalOpen(true)} 
           />
-          <SidebarAiSuggestionWidget /> {/* Add the new widget here */}
+          <SidebarAiSuggestionWidget /> 
         </SidebarContent>
         <SidebarFooter className="p-4 group-data-[collapsible=icon]:p-2">
           <Button variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center" onClick={handleLogout}>
@@ -164,3 +184,4 @@ export default function AppLayout({ children }: AppLayoutProps) {
     </SidebarProvider>
   );
 }
+
