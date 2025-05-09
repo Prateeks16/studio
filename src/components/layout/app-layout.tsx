@@ -11,7 +11,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import SidebarNav from './sidebar-nav';
-import { CircleDollarSign, LogOut, Settings, Wallet as WalletIcon, User, IndianRupee } from 'lucide-react'; // Added IndianRupee
+import { CircleDollarSign, LogOut, Settings, Wallet as WalletIcon, User, IndianRupee, Moon, Sun } from 'lucide-react'; // Added IndianRupee, Moon, Sun
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useRouter } from 'next/navigation'; 
@@ -48,6 +48,51 @@ export default function AppLayout({ children }: AppLayoutProps) {
   
   const [isAddFundsModalOpen, setIsAddFundsModalOpen] = React.useState(false);
   const [isAddingFunds, setIsAddingFunds] = React.useState(false);
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
+
+  React.useEffect(() => {
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      setIsDarkMode(true);
+    } else {
+      document.documentElement.classList.remove('dark');
+      setIsDarkMode(false);
+    }
+    // Listen for theme changes from other sources (e.g., settings page)
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'theme') {
+        if (event.newValue === 'dark') {
+          document.documentElement.classList.add('dark');
+          setIsDarkMode(true);
+        } else {
+          document.documentElement.classList.remove('dark');
+          setIsDarkMode(false);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  const handleThemeToggle = () => {
+    const newIsDarkMode = !isDarkMode;
+    setIsDarkMode(newIsDarkMode);
+    if (newIsDarkMode) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      toast({ title: "Theme Changed", description: "Dark mode enabled." });
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      toast({ title: "Theme Changed", description: "Light mode enabled." });
+    }
+     // Dispatch a custom event so other components (like settings page) can react if needed
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newIsDarkMode ? 'dark' : 'light' } }));
+  };
+
 
   const formatCurrency = (amount?: number) => {
     if (typeof amount !== 'number') return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(0);
@@ -118,6 +163,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     localStorage.removeItem('payright-subscriptions');
     localStorage.removeItem('payright-wallets');
     localStorage.removeItem('payright-transactions');
+    localStorage.removeItem('theme'); // Clear theme on logout
     router.push('/login');
   };
 
@@ -166,6 +212,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <SidebarTrigger className="md:hidden" />
           <div className="flex-1">
           </div>
+          <Button variant="ghost" size="icon" onClick={handleThemeToggle} aria-label="Toggle theme" className="mr-2">
+            {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-8 w-8 rounded-full">

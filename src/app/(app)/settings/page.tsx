@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,21 +15,42 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  useEffect(() => {
-    // Check localStorage for theme preference on component mount
-    const storedTheme = localStorage.getItem('theme');
-    if (storedTheme === 'dark') {
+  const updateThemeState = useCallback((themeValue: string | null) => {
+    if (themeValue === 'dark') {
       document.documentElement.classList.add('dark');
       setIsDarkMode(true);
     } else {
-      // Default to light theme if no preference or explicit light theme
       document.documentElement.classList.remove('dark');
       setIsDarkMode(false);
     }
   }, []);
 
-  const handleThemeToggle = (checked: boolean) => {
-    setIsDarkMode(checked);
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme');
+    updateThemeState(storedTheme);
+
+    const handleThemeChangedEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ theme: string }>;
+      updateThemeState(customEvent.detail.theme);
+    };
+    
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'theme') {
+        updateThemeState(event.newValue);
+      }
+    };
+
+    window.addEventListener('themeChanged', handleThemeChangedEvent);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('themeChanged', handleThemeChangedEvent);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [updateThemeState]);
+
+  const handleThemeToggleSwitch = (checked: boolean) => {
+    setIsDarkMode(checked); // Update local state immediately for responsiveness
     if (checked) {
       document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -39,10 +60,11 @@ export default function SettingsPage() {
       localStorage.setItem('theme', 'light');
       toast({ title: "Theme Changed", description: "Light mode enabled." });
     }
+     // Dispatch a custom event so other components (like app layout) can react
+    window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: checked ? 'dark' : 'light' } }));
   };
 
   const handleSaveChanges = () => {
-    // In a real app, you would save other settings to a backend or localStorage
     toast({
       title: "Settings Saved",
       description: "Your preferences have been updated.",
@@ -139,7 +161,7 @@ export default function SettingsPage() {
             <Switch 
               id="darkMode" 
               checked={isDarkMode}
-              onCheckedChange={handleThemeToggle} 
+              onCheckedChange={handleThemeToggleSwitch} 
             />
           </div>
         </CardContent>
