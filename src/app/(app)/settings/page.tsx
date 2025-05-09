@@ -16,11 +16,13 @@ export default function SettingsPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
+    // Check localStorage for theme preference on component mount
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme === 'dark') {
       document.documentElement.classList.add('dark');
       setIsDarkMode(true);
     } else {
+      // Default to light theme if no preference or explicit light theme
       document.documentElement.classList.remove('dark');
       setIsDarkMode(false);
     }
@@ -57,7 +59,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Profile Settings */}
-      <Card>
+      <Card className="shadow-lg">
         <CardHeader>
           <div className="flex items-center gap-3">
             <UserCircle className="h-6 w-6 text-primary" />
@@ -86,7 +88,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Notification Settings */}
-      <Card>
+      <Card className="shadow-lg">
         <CardHeader>
           <div className="flex items-center gap-3">
             <Bell className="h-6 w-6 text-primary" />
@@ -118,7 +120,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Appearance Settings */}
-      <Card>
+      <Card className="shadow-lg">
         <CardHeader>
           <div className="flex items-center gap-3">
             <Palette className="h-6 w-6 text-primary" />
@@ -144,7 +146,7 @@ export default function SettingsPage() {
       </Card>
       
       {/* Security Settings (Conceptual) */}
-      <Card>
+      <Card className="shadow-lg">
         <CardHeader>
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-6 w-6 text-primary" />

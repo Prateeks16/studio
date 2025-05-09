@@ -4,33 +4,33 @@
 
 @layer base {
   :root {
-    --background: 0 0% 94.1%; /* Light Gray #F0F0F0 */
-    --foreground: 210 10% 23%; /* Dark bluish gray #32383e */
+    --background: 220 20% 97%; /* Very Light Bluish Gray #F5F7FA */
+    --foreground: 215 15% 25%; /* Slightly softer dark gray #363C44 */
 
     --card: 0 0% 100%; /* White */
-    --card-foreground: 210 10% 23%; /* Dark bluish gray */
+    --card-foreground: 215 15% 25%; /* Match foreground */
 
     --popover: 0 0% 100%; /* White */
-    --popover-foreground: 210 10% 23%; /* Dark bluish gray */
+    --popover-foreground: 215 15% 25%; /* Match foreground */
 
-    --primary: 180 100% 25.1%; /* Teal #008080 */
+    --primary: 190 70% 35%; /* A slightly more modern, less saturated teal/blue #218DAA */
     --primary-foreground: 0 0% 100%; /* White */
 
-    --secondary: 210 10% 88%; /* Lighter gray for secondary elements */
-    --secondary-foreground: 180 100% 25.1%; /* Teal */
+    --secondary: 210 30% 95%; /* Very light gray, almost white, for subtle backgrounds #F0F3F5 */
+    --secondary-foreground: 190 70% 35%; /* Match primary */
 
-    --muted: 210 10% 90%; /* Light gray for muted text/elements */
-    --muted-foreground: 210 10% 45%; /* Medium gray for muted text */
+    --muted: 210 25% 92%; /* Slightly darker muted background #E8ECF0 */
+    --muted-foreground: 215 10% 50%; /* Softer muted text #757E8A */
 
-    --accent: 120 61% 50.2%; /* Lime Green #32CD32 */
-    --accent-foreground: 0 0% 100%; /* White */
+    --accent: 45 90% 55%; /* A vibrant yellow/gold #F2B71A */
+    --accent-foreground: 215 15% 15%; /* Darker text for contrast on yellow/gold #1F2429 */
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 75% 55%; /* Slightly less saturated red #D94A4A */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 87.8%; /* Light Gray for borders #e0e0e0 */
-    --input: 0 0% 87.8%; /* Light Gray for input borders */
-    --ring: 180 100% 30.1%; /* Slightly desaturated Teal for focus rings */
+    --border: 210 20% 88%; /* Softer border color #DCE1E6 */
+    --input: 210 20% 88%; /* Match border */
+    --ring: 190 70% 40%; /* Match primary, slightly darker for ring */
 
     --radius: 0.5rem;
 
@@ -42,43 +42,43 @@
     
     /* Sidebar specific theme */
     --sidebar-background: 0 0% 100%; /* White sidebar */
-    --sidebar-foreground: 180 100% 20.1%; /* Darker Teal for icons/text in sidebar */
-    --sidebar-primary: 180 100% 25.1%; /* Teal for active sidebar item background */
+    --sidebar-foreground: 190 70% 30%; /* Darker version of new primary for icons/text */
+    --sidebar-primary: 190 70% 35%; /* Match new primary for active sidebar item background */
     --sidebar-primary-foreground: 0 0% 100%; /* White for active sidebar item text */
-    --sidebar-accent: 180 30% 94%; /* Very light Teal/Gray for hover on sidebar items */
-    --sidebar-accent-foreground: 180 100% 22.1%; /* Teal for hover text on sidebar */
-    --sidebar-border: 0 0% 90%; /* Light gray border for sidebar e.g. #e5e5e5 */
-    --sidebar-ring: 180 100% 30.1%; /* Teal for focus rings in sidebar */
+    --sidebar-accent: 190 30% 96%; /* Very light version of new primary for hover */
+    --sidebar-accent-foreground: 190 70% 32%; /* Slightly darker primary for hover text */
+    --sidebar-border: 210 20% 90%; /* Light gray border for sidebar */
+    --sidebar-ring: 190 70% 40%; /* Match new primary for focus rings in sidebar */
   }
 
   .dark {
-    --background: 210 10% 10%; /* Darker background */
-    --foreground: 0 0% 95%; /* Light text */
+    --background: 220 15% 10%; /* Dark bluish gray #14161A */
+    --foreground: 210 20% 95%; /* Off-white #F0F3F5 */
 
-    --card: 210 10% 12%; 
-    --card-foreground: 0 0% 95%;
+    --card: 220 15% 13%; /* Slightly lighter card BG #1A1D23 */
+    --card-foreground: 210 20% 95%; /* Match foreground */
 
-    --popover: 210 10% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 220 15% 10%; /* Match background */
+    --popover-foreground: 210 20% 95%; /* Match foreground */
 
-    --primary: 180 100% 35%; /* Brighter Teal for dark mode */
-    --primary-foreground: 0 0% 100%;
+    --primary: 190 65% 55%; /* Brighter version of the new primary #57BEE1 */
+    --primary-foreground: 215 15% 15%; /* Darker text for contrast on brighter primary */
 
-    --secondary: 210 10% 20%;
-    --secondary-foreground: 180 100% 35%;
+    --secondary: 220 15% 18%; /* Darker secondary elements #242830 */
+    --secondary-foreground: 190 65% 55%; /* Match primary */
 
-    --muted: 210 10% 22%;
-    --muted-foreground: 0 0% 65%;
+    --muted: 220 15% 22%; /* Muted elements #2E333D */
+    --muted-foreground: 210 15% 65%; /* Lighter muted text #98A0AB */
 
-    --accent: 120 61% 55%; /* Brighter Lime Green */
-    --accent-foreground: 0 0% 0%; /* Black text on lime */
+    --accent: 45 80% 65%; /* Brighter yellow/gold for dark mode #F7C852 */
+    --accent-foreground: 215 20% 10%; /* Very dark text for contrast #121417 */
     
-    --destructive: 0 70% 50%;
+    --destructive: 0 70% 60%; /* Brighter red for dark mode #E06666 */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 210 10% 25%;
-    --input: 210 10% 25%;
-    --ring: 180 100% 40%;
+    --border: 220 15% 25%; /* Border color #333945 */
+    --input: 220 15% 25%; /* Match border */
+    --ring: 190 65% 60%; /* Match primary, slightly lighter for ring */
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -86,14 +86,15 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
-    --sidebar-background: 210 10% 12%;
-    --sidebar-foreground: 180 100% 38%;
-    --sidebar-primary: 180 100% 35%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 10% 20%;
-    --sidebar-accent-foreground: 180 100% 40%;
-    --sidebar-border: 210 10% 18%;
-    --sidebar-ring: 180 100% 40%;
+    /* Sidebar dark theme adjustments */
+    --sidebar-background: 220 15% 12%;      /* Darker sidebar #171A1F */
+    --sidebar-foreground: 190 60% 70%;      /* Lighter teal/blue text #85CEDD */
+    --sidebar-primary: 190 65% 55%;         /* Active item matches primary */
+    --sidebar-primary-foreground: 215 15% 15%; /* Text for active sidebar item */
+    --sidebar-accent: 220 15% 20%;          /* Hover on sidebar items #292E38 */
+    --sidebar-accent-foreground: 190 65% 60%; /* Hover text on sidebar */
+    --sidebar-border: 220 15% 18%;          /* Sidebar border #242830 */
+    --sidebar-ring: 190 65% 60%;            /* Focus rings in sidebar */
   }
 }
 
