@@ -6,6 +6,7 @@
  * - detectRecurringCharges - A function that analyzes bank data to identify recurring charges.
  * - DetectRecurringChargesInput - The input type for the detectRecurringCharges function.
  * - DetectRecurringChargesOutput - The return type for the detectRecurringCharges function.
+ * - DetectRecurringChargesOutputSchema - The Zod schema for the output.
  */
 
 import {ai} from '@/ai/genkit';
@@ -20,7 +21,7 @@ export type DetectRecurringChargesInput = z.infer<typeof DetectRecurringChargesI
 
 const SubscriptionCategorySchema = z.enum(['Entertainment', 'Utilities', 'SaaS', 'Productivity', 'Finance', 'Health & Wellness', 'Shopping', 'Education', 'Other']);
 
-const DetectRecurringChargesOutputSchema = z.array(
+export const DetectRecurringChargesOutputSchema = z.array(
   z.object({
     vendor: z.string().describe('The name of the subscription vendor (e.g., Netflix, Spotify).'),
     amount: z.number().describe('The recurring charge amount.'),
